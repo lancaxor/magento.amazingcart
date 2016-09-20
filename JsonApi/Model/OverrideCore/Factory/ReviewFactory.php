@@ -17,7 +17,7 @@ class ReviewFactory extends \Magento\Review\Model\ReviewFactory
      * @param \Magento\Framework\ObjectManagerInterface $objectManager
      * @param string $instanceName
      */
-    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager, $instanceName = '\\Amazingcard\\JsonApi\\Model\\OverrideCore\\Review')
+    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager, $instanceName = \Amazingcard\JsonApi\Model\OverrideCore\Review::class)
     {
         parent::__construct($objectManager, $instanceName);
     }

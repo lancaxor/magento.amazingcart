@@ -7,9 +7,23 @@
  */
 
 namespace Amazingcard\JsonApi\Helper;
+use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Sales\Api\Data\OrderInterface;
 
+/**
+ * Class ResponseFormatter
+ * Cast output to specified format.
+ * The best way is just to create function to format each entity (product, order, e.t.c.)
+ * and use it, but some functions require different fields for the same entity)
+ * @package Amazingcard\JsonApi\Helper
+ */
 class ResponseFormatter
 {
+
+    public function __construct()
+    {
+
+    }
 
     public function formatError($message, $code) {
         return [
@@ -22,30 +36,32 @@ class ResponseFormatter
      * @return array
      */
     public function formatProductById($productInfo) {
-
+        if(empty($productInfo)) {
+            return [];
+        }
         return [
-            'product_ID'    => $productInfo['id'],      // product_entity.product_id
-            'is_downloadable'   => false,
+            'product_ID'    => $productInfo['entity_id'],      // product_entity.product_id
+            'is_downloadable'   => isset($productInfo['is_downloadable']) ? $productInfo['is_downloadable'] : false,
             'is_purchasable'    => true,
-            'is_featured'       => false,
-            'visibility'        => '',
+            'is_featured'       => isset($productInfo['is_featured']) ? $productInfo['is_featured'] : false,
+            'visibility'        => isset($productInfo['visibility']) ? $productInfo['visibility'] : false,
             'general'           => [
-                'title'     => $productInfo['name'],    // product_entity.title
+                'title'     => $productInfo['sku'],    // product_entity.title
                 'link'      => '',
                 'content'   => [
                     'full_html'     => '',
                     'excepts'       => ''
                 ],
-                'SKU'           => '',
-                'product_type'  => $productInfo['type_id'] ? $productInfo['type_id'] : null,    // product_entity.type_id
+                'SKU'           => isset($productInfo['sku']) ? $productInfo['sku'] : '',
+                'product_type'  => isset($productInfo['type_id']) ? $productInfo['type_id'] : null,    // product_entity.type_id
                 'if_external'   => [    // idk what is it
                     'product_url'   => '',
                     'button_name'   => ''
                 ],
                 'pricing'   => [
-                    'is_on_sale'    => false,
+                    'is_on_sale'    => isset($productInfo['is_salable']) ? $productInfo['is_salable'] : false,
                     'currency'      => '',
-                    'regular_price' => '',      //  catalog_product_index_price.
+                    'regular_price' => isset($productInfo['final_price']) ? $productInfo['final_price'] : '',
                     'sale_start'    => [
                         'unixtime'      => '',
                         'day'           => false,
@@ -64,7 +80,7 @@ class ResponseFormatter
                     ],
                 ],
                 'tax_status'    => '',
-                'tax_class'     => ''
+                'tax_class'     => isset($productInfo['tax_class_id']) ? $productInfo['tax_class_id'] : null
             ],
             'invertory'     => [
                 'manage_stock'  => false,
@@ -78,7 +94,7 @@ class ResponseFormatter
                 'weight'    => [
                     'has_weight'    => false,
                     'unit'          => 'kg',
-                    'value'         => ''
+                    'value'         => ''   // attribute 82
                 ],
                 'dimension'     => [
                     'has_dimension' => false,
@@ -113,7 +129,11 @@ class ResponseFormatter
             'if_variants'   => [
                 'min_price'     => [
                     'currency'  => '',
-                    'price'     => ''
+                    'price'     => isset($productInfo['min_price']) ? $productInfo['min_price'] : null,
+                ],
+                'max_price'     => [
+                    'currency'  => '',
+                    'price'     => isset($productInfo['max_price']) ? $productInfo['max_price'] : null,
                 ],
                 'variables' => []
             ],
@@ -128,7 +148,7 @@ class ResponseFormatter
                 'featured_images'   => '0',
                 'other_images'      => []
             ],
-            'categories'    => []
+            'categories'    => isset($productInfo['category']) ? $this->formatProductCategories($productInfo['category']) : []
         ];
     }
 
@@ -139,27 +159,25 @@ class ResponseFormatter
      * @return array
      */
     public function formatProductCategories($categoryList, $parent = 0) {
-        return $this->_buildProductCategoriesTree($categoryList, $parent);
+        return $this->buildProductCategoriesTree($categoryList, $parent);
     }
 
     /**
      * @param $categoryInfo array(name, id)
      * @param $products
-     * @param $pager array(count, page, limit)
+     * @param $pager \Amazingcard\JsonApi\Helper\Pager
      * @return array
      */
     public function formatCategoryByProductId($categoryInfo, $products, $pager) {
-        $fullCount = isset($pager['count']) ? $pager['count'] : 0;
-        $page = isset($pager['page']) ? $pager['page'] : 0;
-        $pageSize = isset($pager['limit']) ? $pager['limit'] : 0;
+
         return [
             'categoryID'    => $categoryInfo['id'],
             'categoryName'  => $categoryInfo['name'],
-            'categorySlug'  => null,    // only XPEH knows what is it
-            'current_page'  => $page,
-            'post_per_page' => $pageSize ? $pageSize : $fullCount,
-            'total_posts'   => $fullCount,
-            'total_page'    => $pageSize ? intval($fullCount / $pageSize) + 1: 1,
+            'categorySlug'  => null,    // TODO: url-like name of category
+            'current_page'  => $pager->getCurrentPage(),
+            'post_per_page' => $pager->getPageSize(),
+            'total_posts'   => $pager->getTotalItems(),
+            'total_page'    => $pager->getTotalPages(),
             'products'      => $products,
         ];
     }
@@ -281,7 +299,7 @@ class ResponseFormatter
                 'db_format'     => $createdDate,
                 'unixtime'      => $createdDateTimestamp,
                 'servertime'    => $createdDateTimestamp,
-                'ago'           => $this->_getAgoString($strCreatedDate),
+                'ago'           => $this->getAgoString($strCreatedDate),
             ],
             'billing_address' => $formattedBilling,
             'shipping_address' => $formattedShipping
@@ -312,19 +330,20 @@ class ResponseFormatter
         ];
     }
 
+    /**
+     * @param $keyword
+     * @param $pager    Pager
+     * @param $productsInfo
+     * @return array
+     */
     public function formatSearchProduct($keyword, $pager, $productsInfo) {
-
-        $page = isset($pager['page']) ? $pager['page'] : 0;
-        $pageSize = isset($pager['limit']) ? $pager['limit'] : 0;
-        $totalCount = $productsInfo['count'];
-        $totalPages = ($pageSize ? ceil($totalCount / $pageSize) : $totalCount);
 
         return [
             'keyword'       => $keyword,
-            'current_page'  => $page,       // human-friendly
-            'total_page'    => $totalPages,
-            'post_per_page' => $pageSize,
-            'total_post'    => $productsInfo['count'],
+            'current_page'  => $pager->getCurrentPage(),
+            'total_page'    => $pager->getTotalPages(),
+            'post_per_page' => $pager->getPageSize(),
+            'total_post'    => $pager->getTotalItems(),
             'product'       => $productsInfo['data']
         ];
     }
@@ -350,7 +369,7 @@ class ResponseFormatter
                 'comment_author_IP' => null,
                 'unixtime' => $review['timestamp'],
                 'servertime' => $review['timestamp'],
-                'ago' => $this->_getAgoString($review['created_at']),
+                'ago' => $this->getAgoString($review['created_at']),
                 'parent' => 0,
                 'agent' => null,
                 'content' => $review['detail'],
@@ -515,40 +534,104 @@ class ResponseFormatter
         return [];
     }
 
-    public function formatRecentProducts($productInfo) {
+    /**
+     * @param $productInfo
+     * @param $pager    Pager
+     * @return array
+     */
+    public function formatRecentProducts($productInfo, $pager) {
 
-        if(isset($productInfo['error'])) {
-            return [
-                'status'    => $productInfo['error'],
-                'reason'    => $productInfo['reason']
-            ];
-        }
-        $products = $productInfo['product'];
-        $pager = $productInfo['pager'];
-
-        $data = [
-            'current_page'  => $pager['current_page'],
-            'total_page'    => $pager['total_page'],
-            'post_per_page' => $pager['limit'],
-            'total_post'    => $pager['total'],
-            'products'      => $products
-        ];
+        $data = $this->formatPagedProducts($pager, $productInfo['data']);
         return $data;
     }
 
-    public function formatRandomProducts($productsInfo) {
-        return [];
+    /**
+     * @param $productsInfo
+     * @param $pager Pager
+     * @return array
+     */
+    public function formatRandomProducts($productsInfo, $pager) {
+        $data = $this->formatPagedProducts($pager, $productsInfo['data']);
+        return $data;
+    }
+
+    /**
+     * @param $featuredProductInfo
+     * @return array
+     */
+    public function formatFeaturedProduct($featuredProductInfo) {
+
+        $productCount = count($featuredProductInfo);
+        $products = [];
+
+        foreach($featuredProductInfo as $_ => $product) {
+            $products[] = $this->formatProductById($product);
+        }
+        return [
+            'total_post' => $productCount,
+            'products'   => $products
+        ];
+    }
+
+    /**
+     * Just redirect call to formatCustomerData
+     * may be useful in future, if we need to change output data
+     * @param $userRegistrationInfo
+     * @return array
+     */
+    public function formatUserRegistration($userRegistrationInfo) {
+
+        if(!($userRegistrationInfo instanceof \Magento\Customer\Api\Data\CustomerInterface) &&  isset($userRegistrationInfo['error'])) {
+            return [
+                'status'    => $userRegistrationInfo['error'],
+                'reason'    => $userRegistrationInfo['reason']
+            ];
+        }
+        return $this->formatCustomerData([
+            'customer'  => $userRegistrationInfo,
+            'billing'   => [],
+            'shipping'  => []
+        ]);
+    }
+
+    public function formatSingleOrder($orderInfo) {
+
+        $formattedOrder = [];
+        if(isset($orderInfo['order'])) {
+            $formattedOrder = $this->formatOrderEntity($orderInfo['order']);
+
+            if(isset($orderInfo['orderItems'])) {
+                $formattedOrder['items'] = $this->formatOrderItems($orderInfo['orderItems']);
+            }
+        }
+
+        return $formattedOrder;
+    }
+
+    public function formatMyOrders($myOrdersInfo) {
+
+        $formattedOrders = [];
+        if(isset($myOrdersInfo['orders'])) {
+
+            /** @var OrderInterface $order */
+            foreach ($myOrdersInfo['orders'] as $order) {
+
+                $formattedOrder = $this->formatOrderEntity($order);
+                $orderId = $order->getEntityId();
+
+                if(isset($myOrdersInfo['orderItems'], $myOrdersInfo['orderItems'][$orderId])) {
+                    $formattedOrder['items'] = $this->formatOrderItems($myOrdersInfo['orderItems'][$orderId]);
+                }
+                $formattedOrders[] = $formattedOrder;
+            }
+        }
+        return $formattedOrders;
     }
 
 
     // TODO: formatMobilePaymentRedirectApi
     // TODO: formatMobilePaymentRedirectAuthorizeDotNetApi
     // TODO: formatGetSettings
-    // TODO: formatGetOrder
-    // TODO: formatGetFeaturedProduct
-    // TODO: formatGetRandomItems
-    // TODO: formatGetMyOrder
-    // TODO: formatUserRegistration_placeorderapi
     // TODO: formatGetSinglePaymentGatewayMeta
 
 
@@ -559,8 +642,7 @@ class ResponseFormatter
      * @param $parent
      * @return array
      */
-    protected function _buildProductCategoriesTree(&$data, $parent) {
-
+    protected function buildProductCategoriesTree(&$data, $parent = 0) {
         $result = [];
 
         if(empty($data)) {
@@ -574,15 +656,14 @@ class ResponseFormatter
                     'term_id'   => $row['entity_id'],
                     'thumb'     => null,
                     'name'      => $row['value'],
-                    'slug'      => null,
+                    'slug'      => isset($row['category_slug']) ? $row['category_slug'] : '',
                     'category_parent'   => $row['parent_id'],
                     'post_count'    => isset($row['product_count']) ? $row['product_count'] : 0,
-                    'children'  => $this->_buildProductCategoriesTree($data, $row['entity_id'])
+                    'children'  => $this->buildProductCategoriesTree($data, $row['entity_id'])
                 ];
                 $result[] = $item;
             }
         }
-
         return $result;
     }
 
@@ -591,7 +672,7 @@ class ResponseFormatter
      * @param $datetime string datetime, format: YYYY-MM-DD HH-ii-SS
      * @return string
      */
-    protected function _getAgoString($datetime) {
+    protected function getAgoString($datetime) {
 
         $timeFrom = strtotime($datetime);
         $timeDiff = time() - $timeFrom;
@@ -614,6 +695,117 @@ class ResponseFormatter
             return $numberOfUnits . ' ' . $text . (($numberOfUnits>1) ? 's' : '') . ' ago';
         }
         return '';
+    }
+
+    /**
+     * Format pager and products
+     * @param $pager    Pager
+     * @param $productsInfo array
+     * @return array
+     */
+    protected function formatPagedProducts($pager, $productsInfo) {
+        $products = [];
+        foreach($productsInfo as $product) {
+            $products[] = $this->formatProductById($product);
+        }
+
+        return [
+            'current_page'  => $pager->getCurrentPage(),
+            'total_page'    => $pager->getTotalPages(),
+            'post_per_page' => $pager->getPageSize(),
+            'total_post'    => $pager->getTotalItems(),
+            'products'      => $products
+        ];
+    }
+
+    /**
+     * @param $addressInfo AddressInterface
+     * @return string|array
+     */
+    public function formatQuoteAddress($addressInfo) {
+        $data = [];
+        if($addressInfo->getRegion()) {
+            $data['region'] = $addressInfo->getRegion();
+        }
+
+        if($addressInfo->getCity()) {
+            $data['city'] = $addressInfo->getCity();
+        }
+
+
+        if($addressInfo->getStreet()) {
+            $data['street'] = $addressInfo->getStreet();
+        }
+
+        if($addressInfo->getPostcode()) {
+            $data['postcode'] = $addressInfo->getPostcode();
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param $orderData \Magento\Sales\Api\Data\OrderInterface
+     * @return array
+     */
+    public function formatOrderEntity($orderData) {
+        return [
+            'orderID'   => $orderData->getEntityId(),
+            'order_key' => '',
+            'display-price-during-cart-checkout'    => '',
+            'orderDate' => $orderData->getCreatedAt(),
+            'paymentDate'   => '',
+            'status'    => '',
+            'currency'  => '',
+            'billing_email' => $orderData->getCustomerEmail(),
+            'billing_phone' => '',      // no phone for billing?? ;(
+            'billing_address'   => $this->formatQuoteAddress($orderData->getBillingAddress()),
+            'shipping_address'  => '', //$this->_formatQuoteAddress($orderData->getCustomer()),
+            'items' => [],
+            'used_coupon'   => ($orderData->getCouponCode() ? 1 : 0),
+            'subtotalWithTax'   => $orderData->getSubtotalInclTax(),        // whatever is this...
+            'subtotalExTax' => $orderData->getSubtotal(),                   // and this....
+            'shipping_method'   => '', //TODO: format shipping method
+            'shipping_cost' => $orderData->getBaseShippingAmount(),
+            'shipping_tax'  => $orderData->getShippingTaxAmount(),
+            'tax_total' => '',
+            'discount_total'    => $orderData->getShippingDiscountAmount(),
+            'order_total'   => '',
+            'order_note'    => $orderData->getCustomerNote(),
+            'payment_method_id' => '',
+            'payment_method_title'  => '',
+            'payment_desc'  => '',  // TODO: payment status description
+            'order_notes'   => ''
+        ];
+    }
+
+    /**
+     * @param $orderItems \Magento\Sales\Model\Order\Item[]
+     * @return array
+     */
+    protected function formatOrderItems($orderItems) {
+
+        $resultData = [];
+        foreach($orderItems as $orderItem) {
+            $resultData[] = [
+                'product_id'    => $orderItem->getProductId(),
+                'product_info' => [
+                    'featuredImages'=> '',
+                    'productName'   => ''
+                ],
+                'variation_id' => '',
+                'variation_info'    => [
+                    'featuredImages',
+                    'productName'   => $orderItem->getProduct()->getName()
+                ],
+                'quantity'  => $orderItem->getQtyOrdered(),
+                'product_price' => $orderItem->getPriceInclTax(),
+                'product_price_ex_tax'  => $orderItem->getPrice(),
+                'total_price'   => ($orderItem->getPriceInclTax() * $orderItem->getQtyOrdered()),
+                'total_price_ex_tax'    => ($orderItem->getPrice() * $orderItem->getQtyOrdered()),
+            ];
+        }
+        return $resultData;
     }
 
     //endregion

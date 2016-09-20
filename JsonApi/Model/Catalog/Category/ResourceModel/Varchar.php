@@ -14,7 +14,7 @@ class Varchar extends BaseAbstractResourceModel
 {
 
     protected $_idFieldName = 'value_id';
-    protected $_tableName = 'catalog_category_entity_varchar';
+    protected $tableName = 'catalog_category_entity_varchar';
 
     //    public function getList(\Amazingcard\JsonApi\Model\Catalog\Category\Varchar $textModel, $field = 'entity_id', $value = null) {
     //        return $this->load($textModel, $value, $field);

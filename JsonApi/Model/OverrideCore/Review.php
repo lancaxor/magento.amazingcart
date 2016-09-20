@@ -78,7 +78,7 @@ class Review extends \Magento\Review\Model\Review
      */
     protected function _construct()
     {
-        $this->_init('\Amazingcard\JsonApi\Model\OverrideCore\ResourceModel\Review');
+        $this->_init(\Amazingcard\JsonApi\Model\OverrideCore\ResourceModel\Review::class);
     }
 
     /**
@@ -87,9 +87,7 @@ class Review extends \Magento\Review\Model\Review
      */
     public function getList($productId) {
 
-        /**
-         * @var \Amazingcard\JsonApi\Model\OverrideCore\ResourceModel\Review
-         */
+        /** @var $resource \Amazingcard\JsonApi\Model\OverrideCore\ResourceModel\Review */
         $resource = $this->_getResource();
         return $resource->getList($this, $productId);
     }

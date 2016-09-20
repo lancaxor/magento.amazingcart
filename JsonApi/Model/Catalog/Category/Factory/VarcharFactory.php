@@ -20,6 +20,6 @@ class VarcharFactory extends BaseAbstractFactory
      */
     public function getObject(array $arguments = [])
     {
-        return $this->get('Amazingcard\JsonApi\Model\Catalog\Category\Varchar', $arguments);
+        return $this->get(\Amazingcard\JsonApi\Model\Catalog\Category\Varchar::class, $arguments);
     }
 }

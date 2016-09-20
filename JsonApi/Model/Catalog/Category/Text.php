@@ -33,7 +33,7 @@ class Text extends BaseAbstractModel
 
     protected function _construct()
     {
-        $this->_init('Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Text');
+        $this->_init(\Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Text::class);
     }
 
     public function getList($categoryId = null, $getAll = true) 

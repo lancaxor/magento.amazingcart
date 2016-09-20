@@ -11,6 +11,8 @@ namespace Amazingcard\JsonApi\Helper;
 
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Quote\Model\Quote\AddressFactory;
 
 class Api
 {
@@ -18,73 +20,89 @@ class Api
     /**
      * @var User
      */
-    protected $_userHelper;
+    protected $userHelper;
 
     /**
      * Deprecated, but nothing i can use in /checkout/api
      * @var \Magento\Checkout\Model\Cart
      */
-    protected $_cart;
+    protected $cart;
 
     /**
      * @var \Magento\Catalog\Model\ProductRepository
      */
-    protected $_productRepository;
+    protected $productRepository;
 
     /**
      * @var \Magento\SalesRule\Model\ResourceModel\Coupon\Collection
      */
-    protected $_coupon;
+    protected $coupon;
 
     /**
      * @var
      */
-    protected $_order;
+    protected $order;
 
     /**
      * @var \Magento\CatalogInventory\Api\StockStateInterface
      */
-    protected $_stockState;
+    protected $stockState;
 
     /**
      * @var
      */
-    protected $_salesRuleFactory;
+    protected $salesRuleFactory;
 
     /**
      * @var \Magento\SalesRule\Model\RuleFactory
      */
-    protected $_couponCollection;
+    protected $couponCollection;
 
     /**
      * @var \Magento\Quote\Model\QuoteFactory
      */
-    protected $_quoteFactory;
+    protected $quoteFactory;
 
     /**
      * @var \Magento\SalesRule\Model\CouponFactory
      */
-    protected $_salesRuleCouponFactory;
+    protected $salesRuleCouponFactory;
 
     /**
      * @var \Magento\SalesRule\Model\CouponRepository
      */
-    protected $_couponRepository;
+    protected $couponRepository;
 
     /**
      * @var \Magento\Quote\Model\Quote\Payment
      */
-    protected $_payment;
+    protected $payment;
 
     /**
      * @var \Magento\Sales\Api\OrderPaymentRepositoryInterface
      */
-    protected $_orderPaymentRepository;
+    protected $orderPaymentRepository;
+
+    /**
+     * @var \Magento\Quote\Api\Data\PaymentInterface
+     */
+    protected $quotePayment;
 
     /**
      * @var \Magento\Quote\Model\QuoteManagement
      */
-    protected $_quoteManagement;
+    protected $quoteManagement;
+
+    /**
+     * @var AddressFactory
+     */
+    protected $quoteAddressFactory;
+
+
+    /**
+     * @var \Magento\Quote\Model\Quote\AddressFactory
+     */
+//    protected $quoteAddressObject;
 
     public function __construct(
         User $userHelper,
@@ -98,20 +116,25 @@ class Api
         \Magento\SalesRule\Model\CouponRepository   $couponRepository,
         \Magento\Quote\Model\Quote\Payment $payment,//TODO: remove
         \Magento\Sales\Api\OrderPaymentRepositoryInterface $orderPaymentRepository,
-        \Magento\Quote\Model\QuoteManagement $quoteManagement
+        \Magento\Quote\Model\QuoteManagement $quoteManagement,
+        \Magento\Quote\Api\Data\PaymentInterface $quotePayment,
+        AddressFactory $quoteAddressFactory
     ) {
-        $this->_userHelper = $userHelper;
-        $this->_cart = $cart;
-        $this->_productRepository = $productRepository;
-        $this->_stockState = $stockState;
-        $this->_couponCollection = $couponCollection;
-        $this->_salesRuleFactory = $salesRuleFactory;
-        $this->_quoteFactory = $quoteFactory;
-        $this->_salesRuleCouponFactory = $salesRuleCouponFactory;
-        $this->_couponRepository = $couponRepository;
-        $this->_payment = $payment;
-        $this->_orderPaymentRepository = $orderPaymentRepository;
-        $this->_quoteManagement = $quoteManagement;
+        $this->userHelper = $userHelper;
+        $this->cart = $cart;
+        $this->productRepository = $productRepository;
+        $this->stockState = $stockState;
+        $this->couponCollection = $couponCollection;
+        $this->salesRuleFactory = $salesRuleFactory;
+        $this->quoteFactory = $quoteFactory;
+        $this->salesRuleCouponFactory = $salesRuleCouponFactory;
+        $this->couponRepository = $couponRepository;
+        $this->payment = $payment;
+        $this->orderPaymentRepository = $orderPaymentRepository;
+        $this->quoteManagement = $quoteManagement;
+        $this->quotePayment = $quotePayment;
+        $this->quoteAddressFactory = $quoteAddressFactory;
+//        $this->quoteAddressObject = $addressObject;
     }
 
     /**
@@ -124,7 +147,7 @@ class Api
      */
     public function cartApi($login, $password, $productIdJSON, $couponCodeJSON) {
 
-        $loginData = $this->_userHelper->login($login, $password);
+        $loginData = $this->userHelper->login($login, $password);
         if(isset($loginData['error'])) {
 
             return [
@@ -144,19 +167,19 @@ class Api
          * @see http://magento.stackexchange.com/questions/115929/magento2-how-to-add-a-product-into-cart-programatically-when-checkout-cart-pro
          */
         foreach ($productIds as $id => $qty) {
-            $product = $this->_productRepository->getById($id);
+            $product = $this->productRepository->getById($id);
             $params = [
                 'product'   => $id,
                 'qty'      => $qty
             ];
 
             // check if the product is in the stock
-            $isInStock = $this->_stockState->verifyStock($id);
+            $isInStock = $this->stockState->verifyStock($id);
 
             if($isInStock) {
 
                 try {
-                    $this->_cart->addProduct($product, $params);
+                    $this->cart->addProduct($product, $params);
                 } catch (LocalizedException $exception) {
                     $ignoredProducts[] = $id;
                 }
@@ -184,18 +207,18 @@ class Api
                 $couponCodes = [$couponCodes];
             }
 
-            $salesModel = $this->_salesRuleFactory->create();
+            $salesModel = $this->salesRuleFactory->create();
             foreach ($couponCodes as $_ => $code) {
 
-                $this->_cart->getQuote()->setCouponCode($code);
+                $this->cart->getQuote()->setCouponCode($code);
 
-                $ruleId = $this->_salesRuleCouponFactory->create()
+                $ruleId = $this->salesRuleCouponFactory->create()
                     ->setCode($code)
                     ->getRuleId();
 
 
 
-                $this->_cart->getQuote()->setAppliedRuleIds($ruleId);
+                $this->cart->getQuote()->setAppliedRuleIds($ruleId);
 
 //                $coupons = $salesModel->getCoupons();
                 // TODO: add catalog price rules
@@ -204,23 +227,20 @@ class Api
                 // TODO: get these applied coupons summary discount
                 $coupons['coupon-array-inserted'][] = $code;
             }
-
-            $strRuleIds = $this->_cart->getQuote()->getAppliedRuleIds();
-            die(var_dump('applied rules', $strRuleIds));
-            $ruleIds = explode(',', $strRuleIds);
-            $rules = $this->_salesRuleFactory->create()
-                ->getCollection()
-                ->addFieldToFilter('rule_id', array('in'    => $ruleIds));
-
-            foreach ($rules as $rule) {
-                // TODO: count discount
-            }
         }
 
-        $appliedRules = $this->_cart->getQuote()->getAppliedRuleIds();
-        die(var_dump($appliedRules));
+        $strRuleIds = $this->cart->getQuote()->getAppliedRuleIds();
+        die(var_dump('applied rules', $strRuleIds));
+        $ruleIds = explode(',', $strRuleIds);
+        $rules = $this->salesRuleFactory->create()
+            ->getCollection()
+            ->addFieldToFilter('rule_id', array('in'    => $ruleIds));
 
-        $items = $this->_cart->getQuote()->getItemsCollection();
+        foreach ($rules as $rule) {
+            // TODO: count discount
+        }
+
+        $items = $this->cart->getQuote()->getItemsCollection();
 
         // TODO: count total
 
@@ -228,7 +248,7 @@ class Api
         // TODO: get all gateways and check for availability
 
 
-        $this->_cart->save();
+        $this->cart->save();
         return [
             'coupon'
         ];
@@ -248,7 +268,7 @@ class Api
      */
     public function placeOrder($login, $password, $orderData) {
 
-        $loginData = $this->_userHelper->login($login, $password);
+        $loginData = $this->userHelper->login($login, $password);
         if(isset($loginData['error'])) {
 
             return [
@@ -258,7 +278,7 @@ class Api
         }
 
         /** @var CustomerInterface $customer */
-        $customer = $loginData['customer'];
+        $customer = $loginData['data']['customer'];
 
         if(!isset($orderData['productJson'])) {
             return [
@@ -269,34 +289,56 @@ class Api
         $stripProductId = stripslashes($orderData['productJson']);
         $productIds = json_decode($stripProductId);
 
-        $quoteModel = $this->_quoteFactory->create();
+        $quoteModel = $this->quoteFactory->create();
 //        $quoteModel->setCustomer($customer);      // deprecated? see comment to setCustomer
         $quoteModel->setCurrency();
         $quoteModel->assignCustomer($customer); // assign the quote to customer
 
+
         foreach($productIds as $id => $quantity) {
-            $product = $this->_productRepository->getById($id);
-            $quoteModel->addProduct($product, intval($quantity));
+            $product = $this->productRepository->getById($id);
+            try {
+                $quoteModel->addProduct($product, intval($quantity));
+            } catch(LocalizedException $exception) {
+
+            }
         }
+
+        $shippingAddressId = $customer->getDefaultShipping();
+
+        $quoteAddressModel = $this->quoteAddressFactory->create();
+        $quoteAddressModel->getResource()
+            ->load($quoteAddressModel, $shippingAddressId);
+
+        die(var_dump($quoteModel->getShippingAddress()->getId()));
+//        die(var_dump($quoteAddressModel->getData()));
+
+        $quoteModel->setShippingAddress($quoteAddressModel->getById($shippingAddressId));
+
+        $shippingMethod = $quoteModel->getShippingAddress()
+            ->getShippingMethod();
+
+        die(var_dump($shippingMethod));
 
         $quoteModel->getShippingAddress()
             ->setCollectShippingRates(true)
             ->collectShippingRates()
             ->setShippingMethod('freeshipping_freeshipping');   // idk what is this -_-
 
-        if(isset($orderData['paymentMethodId'])) {
-
-            $payment = $this->_orderPaymentRepository->get(0);
-            $quoteModel->setPayment($payment);
-        } else {
-            return [
-                'error' => 1,
-                'reason'    => 'Missing required parameter paymentMethodId!'
-            ];
-        }
+//
+//        if(isset($orderData['paymentMethodId'])) {
+//
+//            $payment = $this->_orderPaymentRepository->get($orderData['paymentMethodId']);
+//            $quoteModel->setPayment($payment);
+//        } else {
+//            return [
+//                'error' => 1,
+//                'reason'    => 'Missing required parameter paymentMethodID!'
+//            ];
+//        }
 
         $quoteModel->collectTotals();
-        $submittedOrder = $this->_quoteManagement->submit($quoteModel);
+        $submittedOrder = $this->quoteManagement->submit($quoteModel);
 
         return [
             'status'    => 0,
@@ -304,7 +346,7 @@ class Api
             'data'      => [
                 'order' => $submittedOrder,
                 'customer'  => $customer,
-                'payment'   => $payment
+//                'payment'   => $payment
             ]
         ];
     }

@@ -53,7 +53,7 @@ class InstallData implements InstallDataInterface
             \Magento\Catalog\Model\Product::ENTITY,
             'is_featured',
             [
-//                'group' => 'General',
+                'group' => 'General',
                 'type' => 'int',
                 'backend' => '',
                 'frontend' => '',

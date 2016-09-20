@@ -26,6 +26,6 @@ class EntityFactory extends BaseAbstractFactory
      */
     public function getObject(array $arguments = [])
     {
-        return $this->get($this->_instanceName, $arguments);
+        return $this->get($this->instanceName, $arguments);
     }
 }

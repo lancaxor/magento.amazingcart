@@ -20,6 +20,6 @@ class TextFactory extends BaseAbstractFactory
      */
     public function getObject(array $arguments = [])
     {
-        return $this->get('Amazingcard\JsonApi\Model\Catalog\Category\Text', $arguments);
+        return $this->get(\Amazingcard\JsonApi\Model\Catalog\Category\Text::class, $arguments);
     }
 }

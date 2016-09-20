@@ -20,37 +20,65 @@ namespace Amazingcard\JsonApi\Helper;
 class UrlWorker
 {
 
-    const TYPE_ACTION = 1,      // some-action => SomeAction
-        TYPE_PUBLIC_METHOD = 2, // some-public-method => somePublicMethod
-        TYPE_PROTECTED_METHOD = 3;  // some-protected-method => _someProtectedMethod
+    /**#@+
+     * Type of method
+     */
+    const TYPE_ACTION = 1;      // some-action => SomeAction
+    const TYPE_PUBLIC_METHOD = 2; // some-public-method => somePublicMethod
+    const TYPE_PROTECTED_METHOD = 3;  // some-protected-method => _someProtectedMethod
+    /**#@-*/
 
-    private $_separators = ['_', '-'];
-    protected $_decodedUrl = '';
-    protected $_rawUrl = '';
+    /**
+     * Array of separators
+     * @var array
+     */
+    private $separators = ['_', '-'];
 
+    /**
+     * Result method name
+     * @var string
+     */
+    protected $decodedUrl = '';
+
+    /**
+     * Source string
+     * @var string
+     */
+    protected $rawUrl = '';
+
+    /**
+     * Store source string
+     * @param $rawUrl
+     * @return $this
+     */
     public function setRawUrl($rawUrl) {
-        $this->_rawUrl = $rawUrl;
+        $this->rawUrl = $rawUrl;
         return $this;
     }
 
+    /**
+     * Get decoded method name
+     * @return string
+     */
     public function getDecodedUrl() {
-        return $this->_decodedUrl;
+        return $this->decodedUrl;
     }
 
     /**
+     * Decode method name
      * @param int $type
      * @return $this
      */
     public function decodeUrl($type = self::TYPE_ACTION)
     {
 
-        $this->_secureType();
-        $typeArray = str_split($this->_rawUrl);
+        $this->secureType();
+        $typeArray = str_split($this->rawUrl);
         $isAfterSeparator = false;
         $firstChar = true;
 
         if ($type == self::TYPE_PROTECTED_METHOD) {
-            $this->_decodedUrl = '_';
+            $this->decodedUrl = '_';
         }
 
         foreach ($typeArray as $char) {
@@ -58,30 +86,35 @@ class UrlWorker
             if($firstChar) {
 
                 if($type == self::TYPE_ACTION) {
-                    $this->_decodedUrl = mb_strtoupper($char);
+                    $this->decodedUrl = mb_strtoupper($char);
                 } else {
-                    $this->_decodedUrl .= mb_strtolower($char);
+                    $this->decodedUrl .= mb_strtolower($char);
                 }
                 $firstChar = false;
 
             } elseif($isAfterSeparator) {
-                $this->_decodedUrl .= mb_strtoupper($char);
+                $this->decodedUrl .= mb_strtoupper($char);
                 $isAfterSeparator = false;
             } else {
 
-                if (in_array($char, $this->_separators)) {
+                if (in_array($char, $this->separators)) {
                     $isAfterSeparator = true;
                     continue;
                 }
-                $this->_decodedUrl .= mb_strtolower($char);
+                $this->decodedUrl .= mb_strtolower($char);
             }
         }
         return $this;
     }
 
-    protected function _secureType() {
-        $this->_rawUrl = str_replace(' ', '', $this->_rawUrl);
-        $this->_rawUrl = stripslashes($this->_rawUrl);
+    /**
+     * Secure string to prevent sql\php injections
+     * @return $this
+     */
+    protected function secureType() {
+        $this->rawUrl = str_replace([' ', '\t'], '', $this->rawUrl);
+        $this->rawUrl = stripslashes($this->rawUrl);
+        $this->rawUrl = htmlentities($this->rawUrl);
         return $this;
     }
 }

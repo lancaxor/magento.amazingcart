@@ -21,9 +21,9 @@ use \Magento\Framework\Data\Collection\AbstractDb;
 class Product extends AbstractModel
 {
 
-    protected $_productFactory;
-    protected $_textFactory;
-    protected $_productEntityFactory;
+    protected $productFactory;
+    protected $textFactory;
+    protected $productEntityFactory;
 
     public function __construct(
         Context $context,
@@ -36,14 +36,14 @@ class Product extends AbstractModel
         array $data = []
     ) {
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
-        $this->_productEntityFactory = $productEntityFactory;
-        $this->_productFactory = $productFactory;
-        $this->_textFactory = $textFactory;
+        $this->productEntityFactory = $productEntityFactory;
+        $this->productFactory = $productFactory;
+        $this->textFactory = $textFactory;
     }
 
     protected function _construct()
     {
-        $this->_init('Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Product');
+        $this->_init(\Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Product::class);
     }
 
     /**
@@ -70,7 +70,7 @@ class Product extends AbstractModel
             'products'      => 'group_concat(product_id separator \',\')'
             ]
         )
-            ->addCategoryNameInfo($this->_textFactory->getObject())
+            ->addCategoryNameInfo($this->textFactory->getObject())
             ->setLimitOffset($limit, $offset)
             ->getList($this);
         return $this->getData();
@@ -95,7 +95,7 @@ class Product extends AbstractModel
             ]
         )
             ->setWithCount(true)
-            ->addProductEntityInfo($this->_productEntityFactory->getObject())
+            ->addProductEntityInfo($this->productEntityFactory->getObject())
             ->setFetchType(BaseAbstractResourceModel::FETCH_ALL)
             ->getList($this, 'category_id', $categoryId);
         return $this->getData();

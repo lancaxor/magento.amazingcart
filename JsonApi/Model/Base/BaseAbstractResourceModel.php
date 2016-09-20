@@ -14,59 +14,86 @@ use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 abstract class BaseAbstractResourceModel extends AbstractDb
 {
 
-    // fetch mode
-    const FETCH_ALL = 'fetch_all',
-        FETCH_ROW   = 'fetch_row',
-        FETCH_ASSOC = 'fetch_assoc';
+    /**#@+
+     * Fetch modes
+     */
+    const FETCH_ALL     = 'fetch_all';
+    const FETCH_ROW     = 'fetch_row';
+    const FETCH_ASSOC   = 'fetch_assoc';
+    /**#@-*/
 
-    // modes for comparing db
-    const COMPARE_EXACT = 'exact',
-        COMPARE_LIKE    = 'like';
+    /**#@+
+     * Data compare mode
+     */
+    const COMPARE_EXACT = 'exact';
+    const COMPARE_LIKE  = 'like';
+    /**#@-*/
 
-    // parts for 'where'
-    const WHERE_CONDITION   = 'where_condition',
-        WHERE_VALUE         = 'where_value',
-        WHERE_TYPE          = 'where_type';
+    /**#@+
+     * parts of WHERE condition
+     */
+    const WHERE_CONDITION   = 'where_condition';
+    const WHERE_VALUE       = 'where_value';
+    const WHERE_TYPE        = 'where_type';
+    /**#@-*/
 
-    const JOIN_LEFT = 'join_left',
-        JOIN_JOIN   = 'join_join',
-        JOIN_INNER  = 'join_inner',
-        JOIN_RIGHT  = 'join_right';
+    /**#@+
+     * JOIN types
+     */
+    const JOIN_LEFT     = 'join_left';
+    const JOIN_JOIN     = 'join_join';
+    const JOIN_INNER    = 'join_inner';
+    const JOIN_RIGHT    = 'join_right';
+    /**#@-*/
 
-    protected $_columns;
+    /** @var  array $columns */
+    protected $columns;
 
-    protected $_withCount;
+    /**
+     * If $withCount = true then load function result will be
+     *      presented as array contains 'data' and 'count' fields
+     * @var $withCount bool
+     */
+    protected $withCount;
 
-    protected $_compareMode;
+    /**
+     * One of values self::COMPARE_*
+     * @var string
+     */
+    protected $compareMode;
 
-    protected $_tableName;
+    /** @var  string */
+    protected $tableName;
 
-    /*
+    /**
+     * WHERE condition parts
      * [
      *  [ 'condition', 'value', 'type'],
      *  [ 'condition', 'value', 'type'],
      * .....
      * ]
+     * @var array
      */
-    protected $_where;
+    protected $where;
 
-    protected $_joins;
+    protected $joins;
 
-    protected $_limit;
-    protected $_offset;
+    /** @var  integer */
+    protected $limit;
+    protected $offset;
 
-    protected $_fetchType;
+    protected $fetchType;
 
-    protected $_order;
+    protected $order;
 
     /**
      * @var  array
     */
-    protected $_group;
+    protected $group;
 
     protected function _construct()
     {
-        $this->_init($this->_tableName, $this->_idFieldName);
+        $this->_init($this->tableName, $this->_idFieldName);
     }
 
     /**
@@ -74,7 +101,12 @@ abstract class BaseAbstractResourceModel extends AbstractDb
      * @return $this
      */
     public function setOrder($order) {
-        $this->_order = $order;
+        $this->order = $order;
+        return $this;
+    }
+
+    public function setRandOrder() {
+        $this->order = 'rand';
         return $this;
     }
 
@@ -92,7 +124,7 @@ abstract class BaseAbstractResourceModel extends AbstractDb
      */
     public function addJoin($name, $condition, $columns = '*', $schema = null, $joinType = BaseAbstractResourceModel::JOIN_JOIN)
     {
-        $this->_joins[] = [
+        $this->joins[] = [
             'name'      => $name,
             'condition' => $condition,
             'columns'   => $columns,
@@ -104,19 +136,19 @@ abstract class BaseAbstractResourceModel extends AbstractDb
 
     public function setFetchType($fetchType) 
     {
-        $this->_fetchType = $fetchType;
+        $this->fetchType = $fetchType;
         return $this;
     }
 
     public function setWithCount($count = true)
     {
-        $this->_withCount = $count;
+        $this->withCount = $count;
         return $this;
     }
 
     public function addWhere($condition, $value = null, $type = null) 
     {
-        $this->_where[] = [
+        $this->where[] = [
             self::WHERE_CONDITION => $condition,
             self::WHERE_VALUE     => $value,
             self::WHERE_TYPE      => $type
@@ -126,7 +158,7 @@ abstract class BaseAbstractResourceModel extends AbstractDb
 
     public function clearJoin() 
     {
-        $this->_joins = [];
+        $this->joins = [];
         return $this;
     }
 
@@ -141,18 +173,18 @@ abstract class BaseAbstractResourceModel extends AbstractDb
     public function setLimitOffset($limit = null, $offset = null) 
     {
         if (isset($limit)) {
-            $this->_limit = $limit;
+            $this->limit = $limit;
         }
 
         if (isset($offset)) {
-            $this->_offset = $offset;
+            $this->offset = $offset;
         }
         return $this;
     }
 
     public function setCompareMode($compareMode = self::COMPARE_EXACT) 
     {
-        $this->_compareMode = $compareMode;
+        $this->compareMode = $compareMode;
         return $this;
     }
 
@@ -164,9 +196,9 @@ abstract class BaseAbstractResourceModel extends AbstractDb
     {
 
         if (is_array($columns)) {
-            $this->_columns = $columns;
+            $this->columns = $columns;
         } else {
-            $this->_columns = [$columns];
+            $this->columns = [$columns];
         }
         return $this;
     }
@@ -179,19 +211,19 @@ abstract class BaseAbstractResourceModel extends AbstractDb
      * @param  \Magento\Framework\Model\AbstractModel $object
      * @return \Magento\Framework\DB\Select
      */
-    protected function _getLoadSelect($field, $value = null, $object = null) 
+    protected function _getLoadSelect($field, $value = null, $object = null)
     {
 
         $select = $this->getConnection()->select()->from($this->getMainTable());
 
         // select custom columns
-        if(!empty($this->_columns)) {
+        if(!empty($this->columns)) {
             $select->reset(\Zend_Db_Select::COLUMNS);
-            $select->columns($this->_columns);
+            $select->columns($this->columns);
         }
 
-        if(!empty($this->_joins)) {
-            foreach($this->_joins as $joinData) {
+        if(!empty($this->joins)) {
+            foreach($this->joins as $joinData) {
                 switch($joinData['joinType']) {
                     case self::JOIN_LEFT:
                         $select->joinLeft(
@@ -217,18 +249,18 @@ abstract class BaseAbstractResourceModel extends AbstractDb
         if (isset($value) and !empty($field)) {
             $field = $this->getConnection()->quoteIdentifier(sprintf('%s.%s', $this->getMainTable(), $field));
 
-            switch($this->_compareMode) {
-            case self::COMPARE_LIKE:
-                $select->where("$field LIKE('$value')");
-                break;
-            default:
-                $select->where($field . '=?', $value);
-                break;
+            switch($this->compareMode) {
+                case self::COMPARE_LIKE:
+                    $select->where("$field LIKE('$value')");
+                    break;
+                default:
+                    $select->where($field . '=?', $value);
+                    break;
             }
         }
 
-        if(!empty($this->_where)) {
-            foreach($this->_where as $_ => $row) {
+        if(!empty($this->where)) {
+            foreach($this->where as $_ => $row) {
                 $select->where(
                     $row[self::WHERE_CONDITION],
                     $row[self::WHERE_VALUE],
@@ -237,19 +269,23 @@ abstract class BaseAbstractResourceModel extends AbstractDb
             }
         }
 
-        if ($this->_limit) {
+        if ($this->limit) {
             $select->limit(
-                $this->_limit,
-                $this->_offset ? $this->_offset : null
+                $this->limit,
+                $this->offset ? $this->offset : null
             );
         }
 
-        if($this->_order) {
-            $select->order($this->_order);
+        if($this->order) {
+            if($this->order === 'rand') {
+                $select->orderRand();
+            } else {
+                $select->order($this->order);
+            }
         }
 
-        if ($this->_group) {
-            $select->group($this->_group);
+        if ($this->group) {
+            $select->group($this->group);
         }
         //var_dump($select->assemble());
         return $select;
@@ -259,7 +295,7 @@ abstract class BaseAbstractResourceModel extends AbstractDb
      * @param $select \Magento\Framework\DB\Select
      * @return mixed
      */
-    protected function _setCountSelect($select) 
+    protected function setCountSelect($select)
     {
         $countSelect = clone $select;
         $countSelect->reset(\Magento\Framework\DB\Select::ORDER);
@@ -284,7 +320,7 @@ abstract class BaseAbstractResourceModel extends AbstractDb
      */
     public function setColumns($columns) 
     {
-        $this->_columns = $columns;
+        $this->columns = $columns;
         return $this;
     }
 
@@ -308,10 +344,10 @@ abstract class BaseAbstractResourceModel extends AbstractDb
 
             $select = $this->_getLoadSelect($field, $value, $object);
 
-            if (isset($this->_fetchType)) {
-                if ($this->_fetchType == self::FETCH_ROW) {
+            if (isset($this->fetchType)) {
+                if ($this->fetchType == self::FETCH_ROW) {
                     $data = $connection->fetchRow($select);
-                } elseif ($this->_fetchType == self::FETCH_ASSOC) {
+                } elseif ($this->fetchType == self::FETCH_ASSOC) {
                     $data = $connection->fetchAssoc($select);
                 } else {
                     $data = $connection->fetchAll($select);
@@ -320,8 +356,8 @@ abstract class BaseAbstractResourceModel extends AbstractDb
                 $data = $connection->fetchAll($select);
             }
 
-            if ($this->_withCount) {
-                $select = $this->_setCountSelect($select);
+            if ($this->withCount) {
+                $select = $this->setCountSelect($select);
                 $count = $connection->fetchOne($select);
             }
 
@@ -329,7 +365,7 @@ abstract class BaseAbstractResourceModel extends AbstractDb
                 $data = [];
             }
 //die(var_dump($select->assemble()));
-            if ($this->_withCount) {
+            if ($this->withCount) {
                 $object->setData(
                     [
                         'data'  => $data,

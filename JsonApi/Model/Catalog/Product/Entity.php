@@ -30,7 +30,7 @@ class Entity extends BaseAbstractModel
 
     protected function _construct()
     {
-        $this->_init('Amazingcard\JsonApi\Model\Catalog\Product\ResourceModel\Entity');
+        $this->_init(\Amazingcard\JsonApi\Model\Catalog\Product\ResourceModel\Entity::class);
 
     }
 
@@ -43,8 +43,8 @@ class Entity extends BaseAbstractModel
         $resource = $this->_getResource();
         $resource->setColumns(
             [
-                'id'        => 'entity_id',
-                'name'      => 'sku',
+                'entity_id' => 'entity_id',
+                'sku'       => 'sku',
                 'type_id'   => 'type_id'
             ]
         )->setFetchType(BaseAbstractResourceModel::FETCH_ROW);

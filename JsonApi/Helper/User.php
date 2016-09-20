@@ -23,12 +23,12 @@ class User
     /**
      * @var AccountManagementInterface
      */
-    private $_accountManagement;
+    private $accountManagement;
 
     /**
      * @var Session
      */
-    private $_session;
+    private $session;
 
     /**
      * @var \Magento\Framework\Stdlib\Cookie\CookieMetadataFactory
@@ -43,27 +43,27 @@ class User
     /**
      * @var CustomerInterface
      */
-    private $_customerObject;
+    private $customerObject;
 
     /**
      * @var \Magento\Customer\Api\Data\AddressInterface
      */
-    private $_defaultBilling;
+    private $defaultBilling;
 
     /**
      * @var \Magento\Customer\Api\Data\AddressInterface
      */
-    private $_defaultShipping;
+    private $defaultShipping;
 
     /**
      * @var \Magento\Customer\Api\CustomerRepositoryInterface\
      */
-    private $_customerRepository;
+    private $customerRepository;
 
     /**
      * @var AddressRepositoryInterface
      */
-    private $_addressRepository;
+    private $addressRepository;
 
     public function __construct(
         AccountManagementInterface $customerAccountManagement,
@@ -72,14 +72,14 @@ class User
         Session $customerSession,
         AddressRepositoryInterface  $addressRepository
     ) {
-        $this->_accountManagement = $customerAccountManagement;
-        $this->_session = $customerSession;
-        $this->customerData = $customer;
-        $this->_customerRepository = $repositoryInterface;
-        $this->_addressRepository = $addressRepository;
+        $this->accountManagement = $customerAccountManagement;
+        $this->session = $customerSession;
+        $this->customerObject = $customer;
+        $this->customerRepository = $repositoryInterface;
+        $this->addressRepository = $addressRepository;
     }
 
-    protected function _getError($message, $status = -1) {
+    protected function getError($message, $status = -1) {
         return [
             'error' => $status, // because there is ~stup~ bad idea to use the same status
                                 // for logout success and changeInfo error (in wordpress sample)
@@ -133,13 +133,13 @@ class User
     public function login($username, $password) {
 
         if(empty($username) || empty($password)) {
-            return $this->_getError('Username and password fields required');
+            return $this->getError('Username and password fields required');
         }
 
         try {
-            $this->_customerObject = $this->_accountManagement->authenticate($username, $password);
-            $this->_session->setCustomerDataAsLoggedIn($this->_customerObject);
-            $this->_session->regenerateId();
+            $this->customerObject = $this->accountManagement->authenticate($username, $password);
+            $this->session->setCustomerDataAsLoggedIn($this->customerObject);
+            $this->session->regenerateId();
 
             if ($this->getCookieManager()->getCookie('mage-cache-sessid')) {
                 $metadata = $this->getCookieMetadataFactory()->createCookieMetadata();
@@ -148,27 +148,55 @@ class User
             }
         } catch (Exception\AuthenticationException $e) {
 
-            return $this->_getError('Username/email/password is wrong');    // btw, $e->getMessage() is much better. Just sayin'
+            return $this->getError('Username/email/password is wrong');    // btw, $e->getMessage() is much better. Just sayin'
 
         } catch (Exception\LocalizedException $e) {
-            return $this->_getError('Localized exception: ' . $e->getMessage());
+            return $this->getError('Localized exception: ' . $e->getMessage());
         } catch (\Exception $e) {
-            return $this->_getError('Unknown exception: ' . $e->getMessage());
+            return $this->getError('Unknown exception: ' . $e->getMessage());
         }
 
-        $this->_defaultBilling = $this->_addressRepository->getById($this->_customerObject->getDefaultBilling());
-        $this->_defaultShipping = $this->_addressRepository->getById($this->_customerObject->getDefaultShipping());
+        $defaultBilling = $this->customerObject->getDefaultBilling();
+        $defaultShipping = $this->customerObject->getDefaultShipping();
+
+        if(isset($defaultBilling)) {
+            $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
+        } else {
+            $this->defaultBilling = [];
+        }
+
+        if(isset($defaultShipping)) {
+            $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
+        } else {
+            $this->defaultShipping = [];
+        }
 
         return [
             'status'    => 0,
             'reason'    => 'Successful Log',
             'data'      => [
-                'customer'  => $this->_customerObject,
-                'billing'   => $this->_defaultBilling,
-                'shipping'  => $this->_defaultShipping,
+                'customer'  => $this->customerObject,
+                'billing'   => $this->defaultBilling,
+                'shipping'  => $this->defaultShipping,
                 'additionalInfo'    => []   // for future
             ]
         ];
+    }
+
+    /**
+     * @return bool|array
+     */
+    public function getCurrentUser() {
+        $isLoggedIn = $this->session->isLoggedIn();
+        if($isLoggedIn) {
+            return [
+                'isLoggedIn'    => $isLoggedIn,
+                'customerId'    => $this->session->getCustomerId(),
+                'customerEmail' => $this->session->getCustomer()->getEmail(),
+                'customerName'  => $this->session->getCustomer()->getName()
+            ];
+        }
+        return $isLoggedIn;
     }
 
     /**
@@ -176,7 +204,7 @@ class User
      * @see \Magento\Customer\Controller\Account\Logout
      */
     public function logout() {
-        $this->_session->logout();
+        $this->session->logout();
 
         if ($this->getCookieManager()->getCookie('mage-cache-sessid')) {
             $metadata = $this->getCookieMetadataFactory()->createCookieMetadata();
@@ -184,9 +212,9 @@ class User
             $this->getCookieManager()->deleteCookie('mage-cache-sessid', $metadata);
         }
 
-        $this->_customerObject = null;
-        $this->_defaultBilling = null;
-        $this->_defaultShipping = null;
+        $this->customerObject = null;
+        $this->defaultBilling = null;
+        $this->defaultShipping = null;
 
         return [
             'status'    => 1,
@@ -197,46 +225,59 @@ class User
     public function updateProfile($firstName = null, $lastName = null, $email = null) {
 
         // checkers
-        if(!$this->_session->isLoggedIn()) {
-            return $this->_getError('Not Authorized', 1);
+        if(!$this->session->isLoggedIn()) {
+            return $this->getError('Not Authorized', 1);
         }
 
         if(!isset($firstName) && !isset($lastName) && !isset($email)) {
-            return $this->_getError('No Input');
+            return $this->getError('No Input');
         }
 
         // loading data about current user
-        $customerId = $this->_session->getCustomer()->getId();
-        $this->_customerObject = $this->_customerRepository->getById($customerId);
+        $customerId = $this->session->getCustomer()->getId();
+        $this->customerObject = $this->customerRepository->getById($customerId);
 
         // edit data
         if(isset($firstName)) {
-            $this->_customerObject->setFirstname($firstName);
+            $this->customerObject->setFirstname($firstName);
         }
         if(isset($lastName)) {
-            $this->_customerObject->setLastname($lastName);
+            $this->customerObject->setLastname($lastName);
         }
         if(isset($email)) {
-            $this->_customerObject->setEmail($email);
+            $this->customerObject->setEmail($email);
         }
 
         // to database
         try {
-            $this->_customerRepository->save($this->_customerObject);
+            $this->customerRepository->save($this->customerObject);
         } catch (\Exception $ex) {
-            return $this->_getError('Error during saving data to DB: ' . $ex->getMessage());
+            return $this->getError('Error during saving data to DB: ' . $ex->getMessage());
         }
 
-        $this->_defaultBilling = $this->_addressRepository->getById($this->_customerObject->getDefaultBilling());
-        $this->_defaultShipping = $this->_addressRepository->getById($this->_customerObject->getDefaultShipping());
+        $defaultBilling = $this->customerObject->getDefaultBilling();
+        $defaultShipping = $this->customerObject->getDefaultShipping();
+
+        if(isset($defaultBilling)) {
+            $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
+        } else {
+            $this->defaultBilling = [];
+        }
+
+        if(isset($defaultShipping)) {
+            $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
+        } else {
+            $this->defaultShipping = [];
+        }
+
 
         return [
             'status'    => 0,
             'reason'    => 'Succesful updated profile', // btw, 'SuccessfulLY' is correct -_-
             'data'      => [
-                'customer'  => $this->_customerObject,
-                'billing'   => $this->_defaultBilling,
-                'shipping'   => $this->_defaultShipping
+                'customer'  => $this->customerObject,
+                'billing'   => $this->defaultBilling,
+                'shipping'   => $this->defaultShipping
             ]
         ];
     }
@@ -250,7 +291,7 @@ class User
     public function updateBilling($userName, $password, $billingData) {
 
         if(!isset($userName) || !isset($password)) {
-            return $this->_getError('No input');
+            return $this->getError('No input');
         }
 
         $loginInfo = $this->login($userName, $password);
@@ -261,19 +302,19 @@ class User
         $isEditedBilling = false;
 
         if(isset($billingData['billing_first_name'])) {
-            $this->_defaultBilling->setFirstname($billingData['billing_first_name']);
+            $this->defaultBilling->setFirstname($billingData['billing_first_name']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_last_name'])) {
-            $this->_defaultBilling->setLastname($billingData['billing_last_name']);
+            $this->defaultBilling->setLastname($billingData['billing_last_name']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_company'])) {
-            $this->_defaultBilling->setCompany($billingData['billing_company']);
+            $this->defaultBilling->setCompany($billingData['billing_company']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_address_1'])) {
-            $this->_defaultBilling->setStreet($billingData['billing_address_1']);
+            $this->defaultBilling->setStreet($billingData['billing_address_1']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_address_2'])) {
@@ -282,43 +323,43 @@ class User
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_city'])) {
-            $this->_defaultBilling->setCity($billingData['billing_city']);
+            $this->defaultBilling->setCity($billingData['billing_city']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_postcode'])) {
-            $this->_defaultBilling->setPostcode($billingData['billing_postcode']);
+            $this->defaultBilling->setPostcode($billingData['billing_postcode']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_state'])) {
-            $this->_defaultBilling->setRegionId($billingData['billing_state']);
+            $this->defaultBilling->setRegionId($billingData['billing_state']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_country'])) {
-            $this->_defaultBilling->setCountryId($billingData['billing_country']);
+            $this->defaultBilling->setCountryId($billingData['billing_country']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_phone'])) {
-            $this->_defaultBilling->setTelephone($billingData['billing_phone']);
+            $this->defaultBilling->setTelephone($billingData['billing_phone']);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_email'])) {
-            // no email in billing, use customer email?..
+            // no email in billing, use     customer email?..
             $isEditedBilling = true;
         }
 
         // save to database
         // and we don`t have to write smth if nothing was changed
         if($isEditedBilling) {
-            $this->_addressRepository->save($this->_defaultBilling);
+            $this->addressRepository->save($this->defaultBilling);
         }
 
         return [
             'status'    => 0,
             'reason'    => 'Succesfull updated billing',
             'data'      => [
-                'customer'  => $this->_customerObject,
-                'billing'   => $this->_defaultBilling,
-                'shipping'  => $this->_defaultShipping
+                'customer'  => $this->customerObject,
+                'billing'   => $this->defaultBilling,
+                'shipping'  => $this->defaultShipping
             ]
         ];
     }
@@ -326,7 +367,7 @@ class User
     public function updateShipping($userName, $password, $shippingData) {
 
         if(!isset($userName) || !isset($password)) {
-            return $this->_getError('No input');
+            return $this->getError('No input');
         }
 
         $loginInfo = $this->login($userName, $password);
@@ -336,19 +377,19 @@ class User
 
         $isEditedShipping = false;
         if(isset($shippingData['shipping_first_name'])) {
-            $this->_defaultShipping->setFirstname($shippingData['shipping_first_name']);
+            $this->defaultShipping->setFirstname($shippingData['shipping_first_name']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_last_name'])) {
-            $this->_defaultShipping->setLastname($shippingData['shipping_last_name']);
+            $this->defaultShipping->setLastname($shippingData['shipping_last_name']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_company'])) {
-            $this->_defaultShipping->setCompany($shippingData['shipping_company']);
+            $this->defaultShipping->setCompany($shippingData['shipping_company']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_address_1'])) {
-            $this->_defaultShipping->setStreet($shippingData['shipping_address_1']);
+            $this->defaultShipping->setStreet($shippingData['shipping_address_1']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_address_2'])) {
@@ -356,23 +397,23 @@ class User
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_city'])) {
-            $this->_defaultShipping->setCity($shippingData['shipping_city']);
+            $this->defaultShipping->setCity($shippingData['shipping_city']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_postcode'])) {
-            $this->_defaultShipping->setPostcode($shippingData['shipping_postcode']);
+            $this->defaultShipping->setPostcode($shippingData['shipping_postcode']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_state'])) {
-            $this->_defaultShipping->setRegionId($shippingData['shipping_state']);
+            $this->defaultShipping->setRegionId($shippingData['shipping_state']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_country'])) {
-            $this->_defaultShipping->setCountryId($shippingData['shipping_country']);
+            $this->defaultShipping->setCountryId($shippingData['shipping_country']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_phone'])) {
-            $this->_defaultShipping->setTelephone($shippingData['shipping_phone']);
+            $this->defaultShipping->setTelephone($shippingData['shipping_phone']);
             $isEditedShipping = true;
         }
         if(isset($shippingData['shipping_email'])) {
@@ -381,16 +422,16 @@ class User
 
         // save to database
         if($isEditedShipping) {
-            $this->_addressRepository->save($this->_defaultShipping);
+            $this->addressRepository->save($this->defaultShipping);
         }
 
         return [
             'status'    => 0,
             'reason'    => 'Succesfull updated shipping',
             'data'      => [
-                'customer'  => $this->_customerObject,
-                'billing'   => $this->_defaultBilling,
-                'shipping'  => $this->_defaultShipping
+                'customer'  => $this->customerObject,
+                'billing'   => $this->defaultBilling,
+                'shipping'  => $this->defaultShipping
             ]
         ];
     }
@@ -403,9 +444,9 @@ class User
         }
 
         try {
-            $success = $this->_accountManagement->changePassword($userName, $currentPassword, $newPassword);
+            $success = $this->accountManagement->changePassword($userName, $currentPassword, $newPassword);
         } catch(Exception\LocalizedException $e) {
-            return $this->_getError($e->getMessage());
+            return $this->getError($e->getMessage());
         }
 
         if(isset($success) && $success) {
@@ -422,6 +463,25 @@ class User
      * @return CustomerInterface
      */
     public function getUserById($customerId) {
-        return $this->_customerRepository->getById($customerId);
+        return $this->customerRepository->getById($customerId);
+    }
+
+    /**
+     * @param $email    string
+     * @param $password string
+     * @param $firstName    string
+     * @param $lastName string
+     * @return array|CustomerInterface
+     */
+    public function registerUser($email, $password, $firstName, $lastName) {
+        $userModel = $this->customerObject->setEmail($email)
+            ->setFirstname($firstName)
+            ->setLastname($lastName);
+
+        try {
+            return $this->accountManagement->createAccount($userModel, $password);
+        } catch (Exception\LocalizedException $exception) {
+            return $this->getError($exception->getMessage());
+        }
     }
 }

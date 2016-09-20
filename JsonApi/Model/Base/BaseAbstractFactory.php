@@ -11,35 +11,34 @@ namespace Amazingcard\JsonApi\Model\Base;
 /**
  * Base class for category factories
  * Class BaseAbstractFactory
- *
- * @package Amazingcard\JsonApi\Model\Base
  */
 abstract class BaseAbstractFactory
 {
     /**
      * @var \Magento\Framework\ObjectManagerInterface
      */
-    protected $_objectManager = null;
+    protected $objectManager = null;
 
     /**
      * Instance name to create
      *
      * @var string
      */
-    protected $_instanceName = null;
+    protected $instanceName = null;
 
     /**
      * @var BaseAbstractModel
     */
-    protected $_resource;
+    protected $resource;
 
     /**
      * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param $instanceName $string
      */
-    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager, $instanceName = '\\Amazingcard\JsonApi\\Model\\Base\\BaseAbstractResourceModel')
+    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager, $instanceName = \Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel::class)
     {
-        $this->_objectManager = $objectManager;
-        $this->_instanceName = $instanceName;
+        $this->objectManager = $objectManager;
+        $this->instanceName = $instanceName;
     }
 
     /**
@@ -49,15 +48,15 @@ abstract class BaseAbstractFactory
      */
     public function create($type, array $args = []) 
     {
-        return $this->_objectManager->create($type, $args);
+        return $this->objectManager->create($type, $args);
     }
 
     public function get($type, $args = []) 
     {
 
-        if (!isset($this->_resource)) {
-            $this->_resource = $this->create($type, $args);
+        if (!isset($this->resource)) {
+            $this->resource = $this->create($type, $args);
         }
-        return $this->_resource;
+        return $this->resource;
     }
 }

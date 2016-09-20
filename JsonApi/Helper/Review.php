@@ -17,17 +17,17 @@ class Review
     /**
      * @var ReviewFactory
      */
-    protected $_reviewFactory;
+    protected $reviewFactory;
 
     /**
      * @var RatingFactory
      */
-    protected $_ratingFactory;
+    protected $ratingFactory;
 
     /**
      * @var User
      */
-    protected $_userHelper;
+    protected $userHelper;
 
 
     public function __construct(
@@ -35,13 +35,13 @@ class Review
         RatingFactory $ratingFactory,
         User    $userHelper
     ) {
-        $this->_reviewFactory = $reviewFactory;
-        $this->_ratingFactory = $ratingFactory;
-        $this->_userHelper = $userHelper;
+        $this->reviewFactory = $reviewFactory;
+        $this->ratingFactory = $ratingFactory;
+        $this->userHelper = $userHelper;
     }
 
     public function getReviewsByProduct($productId = null) {
-        return $this->_reviewFactory->create()->getList($productId);
+        return $this->reviewFactory->create()->getList($productId);
     }
 
     /**
@@ -50,12 +50,12 @@ class Review
      */
     public function getReviewById($reviewId) {
         if(!isset($reviewId)) {
-            return $this->_generateError('No Input', -1);
+            return $this->generateError('No Input', -1);
         }
-        $model = $this->_reviewFactory->create();
+        $model = $this->reviewFactory->create();
         $model->getResource()->load($model, $reviewId, 'review_id');
         $reviewData = $model->getData();
-        $customer = $this->_userHelper->getUserById($reviewData['customer_id']);
+        $customer = $this->userHelper->getUserById($reviewData['customer_id']);
         $reviewData['statusId'] = $model->getStatusId();
         return [
             'status'    => '0',
@@ -72,14 +72,14 @@ class Review
 
     public function addReview($userLogin, $userPassword, $reviewData) {
 
-        $loginData = $this->_userHelper->login($userLogin, $userPassword);
+        $loginData = $this->userHelper->login($userLogin, $userPassword);
         if(isset($loginData['error'])) {
 
             return $loginData;
         }
 
         if(!isset($reviewData['productId'], $reviewData['comment']/*, $reviewData['rating']*/ )) {
-            return $this->_generateError('No input', -1);
+            return $this->generateError('No input', -1);
         }
         /**
          * @var $customer \Magento\Customer\Api\Data\CustomerInterface
@@ -88,7 +88,7 @@ class Review
 
         $reviewTitleLimit = 100;
 
-        $model = $this->_reviewFactory->create();
+        $model = $this->reviewFactory->create();
 
         // edit entity
         $model->setEntityId(1)  // product
@@ -106,7 +106,7 @@ class Review
         try {
             $model->getResource()->save($model);
         } catch (\Exception $e) {
-            return $this->_generateError($e->getMessage());
+            return $this->generateError($e->getMessage());
         }
 
         $reviewId = $model->getId();
@@ -117,7 +117,7 @@ class Review
         ];
     }
 
-    protected function _generateError($message, $code = 1) {
+    protected function generateError($message, $code = 1) {
         return [
             'error' => $code,
             'status'    => $code,

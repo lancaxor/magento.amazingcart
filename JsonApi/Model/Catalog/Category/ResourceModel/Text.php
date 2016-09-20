@@ -14,7 +14,7 @@ class Text extends BaseAbstractResourceModel
 {
     
     protected $_idFieldName = 'value_id';
-    protected $_tableName = 'catalog_category_entity_text';
+    protected $tableName = 'catalog_category_entity_text';
 
     public function getList(\Amazingcard\JsonApi\Model\Catalog\Category\Text $textModel, $field = 'entity_id', $value = null) 
     {

@@ -20,11 +20,19 @@ use \Magento\Framework\Data\Collection\AbstractDb;
 class Varchar extends BaseAbstractModel
 {
 
-    const ATTRIBUTE_NAME    = 45,
-        ATTRIBUTE_TYPE      = 52,
-        ATTRIBUTE_URL_NAME  = 117,
-        ATTRIBUTE_PATH      = 118;
+    /**#@+
+     *  Attribute values
+     * @var int
+     */
+    const ATTRIBUTE_NAME        = 45;
+    const ATTRIBUTE_TYPE        = 52;   // type of attribute
+    const ATTRIBUTE_SLUG        = 117;  // = url-like name
+    const ATTRIBUTE_PATH        = 118;  // path to the category relate to root category
+    /**#@-*/
 
+    /**
+     * @var VarcharFactory
+     */
     protected $_varcharFactory;
 
     public function __construct(
@@ -41,7 +49,7 @@ class Varchar extends BaseAbstractModel
 
     protected function _construct()
     {
-        $this->_init('Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Varchar');
+        $this->_init(\Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Varchar::class);
     }
 
     /**
@@ -50,18 +58,18 @@ class Varchar extends BaseAbstractModel
      * @param  integer|null $categoryId
      * @return mixed
      */
-    public function getNames($categoryId = null) 
+    public function getNamesAndSlugs($categoryId = null)
     {
 
         /**
          * @var \Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Varchar $resource
         */
         $resource = $this->_getResource();
-        $resource->addWhere('attribute_id=?', self::ATTRIBUTE_NAME)
+        $resource->addWhere('attribute_id in (?)', [self::ATTRIBUTE_NAME, self::ATTRIBUTE_SLUG])
             ->setColumns(
                 [
                 'id'        => 'entity_id',
-                'name'      => 'value'
+                'value'      => 'value'
                 ]
             )
             ->setFetchType(isset($categoryId) ? BaseAbstractResourceModel::FETCH_ROW :BaseAbstractResourceModel::FETCH_ASSOC);  // assoc by entity_id

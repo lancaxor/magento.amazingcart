@@ -11,17 +11,18 @@ namespace Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel;
 
 use Amazingcard\JsonApi\Model\Base\BaseAbstractModel;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
+use Amazingcard\JsonApi\Model\Catalog\Category\Varchar;
 
 class Entity extends BaseAbstractResourceModel
 {
     protected $_idFieldName = 'entity_id';
-    protected $_tableName = 'catalog_category_entity';
+    protected $tableName = 'catalog_category_entity';
 
     /**
      * Table 'catalog_category_entity_varchar'
      * @var String
      */
-    protected $_varcharTable;
+    protected $varcharTable;
 
     /**
      * Define main table. Define other tables name
@@ -29,7 +30,7 @@ class Entity extends BaseAbstractResourceModel
     protected function _construct()
     {
         parent::_construct();
-        $this->_varcharTable = $this->getTable('catalog_category_entity_varchar');
+        $this->varcharTable = $this->getTable('catalog_category_entity_varchar');
     }
 
     /**
@@ -40,7 +41,7 @@ class Entity extends BaseAbstractResourceModel
      * @return $this
      */
     public function addProductCountInfo(\Amazingcard\JsonApi\Model\Catalog\Category\Product $categoryProductModel) {
-        //die(var_dump());
+
         $categoryProductTable = $categoryProductModel->getResource()->getMainTable();
         $currentTableName = $this->getMainTable();
 
@@ -52,11 +53,29 @@ class Entity extends BaseAbstractResourceModel
             ])
             ->group('category_id');
         $countCode = $countSelect->assemble();
-//die(var_dump($countCode));
+
         $this->addJoin(
             ['rel_category_product'    => new \Zend_Db_Expr("($countCode)")],
             "rel_category_product.category_id = {$currentTableName}.entity_id",
             ['product_count' => 'rel_category_product.product_cnt'],
+            null,
+            BaseAbstractResourceModel::JOIN_LEFT
+        );
+        return $this;
+    }
+
+    /**
+     * Adds slug  attribute to product
+     * @param Varchar $categoryVarcharModel
+     * @return $this
+     */
+    public function addProductSlugInfo(\Amazingcard\JsonApi\Model\Catalog\Category\Varchar $categoryVarcharModel) {
+        $varcharTable = $categoryVarcharModel->getResource()->getMainTable();
+        $currentTableName = $this->getMainTable();
+        $this->addJoin(
+            ['category_varchar' => $varcharTable],
+            "category_varchar.entity_id = {$currentTableName}.entity_id AND category_varchar.attribute_id = " . Varchar::ATTRIBUTE_SLUG,
+            ['category_slug'    => 'category_varchar.value'],
             null,
             BaseAbstractResourceModel::JOIN_LEFT
         );
@@ -74,8 +93,8 @@ class Entity extends BaseAbstractResourceModel
 
         $select = parent::_getLoadSelect($field, $value, $object);
         $select->join(
-            $this->_varcharTable,
-            $this->getMainTable() . ".entity_id = {$this->_varcharTable}.entity_id AND {$this->_varcharTable}.attribute_id=45"   // attribute_id = 45 => category name
+            $this->varcharTable,
+            $this->getMainTable() . ".entity_id = {$this->varcharTable}.entity_id AND {$this->varcharTable}.attribute_id=45"   // attribute_id = 45 => category name
         );
         return $select;
     }

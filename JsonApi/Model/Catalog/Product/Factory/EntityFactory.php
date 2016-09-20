@@ -20,6 +20,6 @@ class EntityFactory extends BaseAbstractFactory
      */
     public function getObject(array $arguments = [])
     {
-        return $this->get('\Amazingcard\JsonApi\Model\Catalog\Product\Entity', $arguments);
+        return $this->get(\Amazingcard\JsonApi\Model\Catalog\Product\Entity::class, $arguments);
     }
 }

@@ -14,5 +14,5 @@ use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
 class Entity extends BaseAbstractResourceModel
 {
     protected $_idFieldName = 'entity_id';
-    protected $_tableName = 'catalog_product_entity';
+    protected $tableName = 'catalog_product_entity';
 }

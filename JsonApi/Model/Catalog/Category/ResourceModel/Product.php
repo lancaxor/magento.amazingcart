@@ -15,7 +15,7 @@ use Amazingcard\JsonApi\Model\Catalog\Category\Text;
 class Product extends BaseAbstractResourceModel
 {
     protected $_idFieldName = 'entity_id';
-    protected $_tableName = 'catalog_category_product';
+    protected $tableName = 'catalog_category_product';
 
     /**
      * @param $textModel \Amazingcard\JsonApi\Model\Catalog\Category\Text
