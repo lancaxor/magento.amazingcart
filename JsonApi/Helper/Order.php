@@ -87,6 +87,11 @@ class Order
      */
     protected $quotePaymentFactory;
 
+    /**
+     * @var \Amazingcard\JsonApi\Helper\Payment
+     */
+    protected $paymentHelper;
+
     public function __construct(
         User $userHelper,
         OrderRepositoryInterface $orderRepository,
@@ -99,7 +104,8 @@ class Order
         QuoteFactory $quoteFactory,
         AddressRepositoryInterface $customerAddressRepository,
         OrderPaymentRepositoryInterface $orderPaymentRepository,
-        PaymentFactory $quotePaymentFactory
+        PaymentFactory $quotePaymentFactory,
+        \Amazingcard\JsonApi\Helper\Payment $paymentHelper
     ) {
         $this->userHelper = $userHelper;
         $this->orderRepository = $orderRepository;
@@ -113,6 +119,7 @@ class Order
         $this->customerAddress = $customerAddressRepository;
         $this->orderPaymentRepository = $orderPaymentRepository;
         $this->quotePaymentFactory = $quotePaymentFactory;
+        $this->paymentHelper = $paymentHelper;
     }
 
     /**
@@ -248,6 +255,7 @@ class Order
         $stripProductId = stripslashes($orderData['productJson']);
         $productIds = json_decode($stripProductId);
 
+        $newCart = $this->quoteManagement->createEmptyCart();
         $quoteModel = $this->quoteFactory->create();
 //        $quoteModel->setCustomer($customer);      // deprecated? see comment to setCustomer
         $quoteModel->setCurrency();
@@ -269,23 +277,12 @@ class Order
         /** @var \Magento\Quote\Model\Quote\Address $quoteAddressModel */
         $quoteAddressModel = $this->quoteAddressFactory->create();
         $quoteAddressModel->importCustomerAddressData($customerShippingAddress);
-
-//        $shippingMethod = $quoteModel->getShippingAddress()
-//            ->getShippingMethod();
-
-
-        //$quoteModel->getShippingAddress()->setShippingMethod('freeshipping_freeshipping');   // idk what is this -_-
-
         $quoteAddressModel->setQuote($quoteModel)
 //            ->setShippingMethod('Free')
             ->setShippingMethod('flatrate_flatrate')
             ->setCollectShippingRates(true);
-//            ->collectShippingRates();
 
         $quoteModel->setShippingAddress($quoteAddressModel);
-        $tmpShippingMethod = $quoteModel->getShippingAddress()->collectShippingRates()
-            ->getShippingMethod();
-//        die(var_dump($tmpShippingMethod));
 
         if (isset($orderData['couponCodeJson'])) {
             $stripCouponCode = stripslashes($orderData['couponCodeJson']);
@@ -296,18 +293,16 @@ class Order
             }
         }
 
-
         if(isset($orderData['paymentMethodId'])) {
 
             /** @var Payment $paymentModel */
             $paymentModel = $this->quotePaymentFactory->create();
             $paymentModel->getResource()
                 ->load($paymentModel, $orderData['paymentMethodId']);
-
-//            die(var_dump($paymentModel->getMethod()));
-
-            //$paymentModel->setQuote($quoteModel);
+            $paymentModel->setQuote($quoteModel);
             $quoteModel->setPayment($paymentModel);
+            $quoteModel->getPayment()->setMethod($paymentModel->getMethod());   // damn......
+
         } else {
             return [
                 'error' => 2,
@@ -315,11 +310,12 @@ class Order
             ];
         }
 
-        die(var_dump($quoteModel->getPayment()->getMethod()));
-        $quoteModel->collectTotals();   // TODO: check this!!1!
+        $quoteModel->collectTotals();
 
         try {
+            $this->quoteManagement->placeOrder($newCart, $paymentModel);
             $submittedOrder = $this->quoteManagement->submit($quoteModel);
+
         } catch(LocalizedException $exception) {
             return [
                 'error'     => 1,
@@ -338,4 +334,7 @@ class Order
         ];
     }
 
+    public function getRedirectPaymentUrl($orderId, $paymentMethodId) {
+        $this->paymentHelper->getPaymentRedirectUrl($paymentMethodId);
+    }
 }

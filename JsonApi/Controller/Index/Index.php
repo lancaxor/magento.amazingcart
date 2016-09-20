@@ -87,9 +87,9 @@ class Index extends Action
     protected $reviewHelper;
 
     /**
-     * @var \Amazingcard\JsonApi\Helper\Api
+     * @var \Amazingcard\JsonApi\Helper\Quote
      */
-    protected $apiHelper;
+    protected $quoteHelper;
 
     /**
      * @var UrlWorker
@@ -131,7 +131,7 @@ class Index extends Action
         \Amazingcard\JsonApi\Helper\ResponseFormatter $responseFormatter,
         \Amazingcard\JsonApi\Helper\User $userHelper,
         \Amazingcard\JsonApi\Helper\Review $reviewHelper,
-        \Amazingcard\JsonApi\Helper\Api $apiHelper,
+        \Amazingcard\JsonApi\Helper\Quote $apiHelper,
         \Amazingcard\JsonApi\Helper\Product $productHelper,
         \Amazingcard\JsonApi\Helper\Order $orderHelper,
         Pager $pagerHelper,
@@ -150,7 +150,7 @@ class Index extends Action
         $this->userHelper = $userHelper;
         $this->reviewHelper = $reviewHelper;
         $this->productHelper = $productHelper;
-        $this->apiHelper = $apiHelper;
+        $this->quoteHelper = $apiHelper;
         $this->urlWorker = $urlWorker;
         $this->coreProductCollection = $coreProductCollection;
         $this->pagerHelper = $pagerHelper;
@@ -471,12 +471,12 @@ class Index extends Action
         $password = $request->getParam('password');
         $productIdJson = $request->getParam('productIDJson');
         $couponIdJson = $request->getParam('couponCodeJson');
-        $cartInfo = $this->apiHelper->cartApi($userName, $password, $productIdJson, $couponIdJson);
+        $cartInfo = $this->quoteHelper->cartApi($userName, $password, $productIdJson, $couponIdJson);
         return $this->responseFormatter->formatCartApi($cartInfo);
     }
 
     /**
-     * Add products and coupons to cart and sumbit related order.
+     * Add products and coupons to cart and submit related order.
      *
      * @param $request \Magento\Framework\App\RequestInterface
      * @return array
@@ -491,14 +491,12 @@ class Index extends Action
             'orderNotes' => $request->getParam('orderNotes')
         ];
 
-//        $placedOrderInfo = $this->apiHelper->placeOrder($username, $password, $orderData);
         $placedOrderInfo = $this->orderHelper->placeOrder($username, $password, $orderData);
-        die(var_dump($placedOrderInfo));
         return $this->responseFormatter->formatPlaceOrderApi($placedOrderInfo);
     }
 
     /**
-     * TODO: idk what the XPEH is this, so just look around...
+     *
      *
      * @param $request \Magento\Framework\App\RequestInterface
      * @return array
@@ -507,6 +505,8 @@ class Index extends Action
         $orderKey = $request->getParam('orderKey');
         $orderId = $request->getParam('orderID');
         $paymentMethodId = $request->getParam('paymentMethodID');
+
+        $data = $this->orderHelper->getRedirectPaymentUrl($orderId, $paymentMethodId);
 
         return [];
     }
