@@ -11,6 +11,7 @@
 namespace Amazingcard\JsonApi\Controller\Index;
 
 use Amazingcard\JsonApi\Helper\Pager;
+use Amazingcard\JsonApi\Helper\PaymentHelper;
 use Amazingcard\JsonApi\Helper\UrlWorker;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
 use Amazingcard\JsonApi\Model\Catalog\Category\Factory\VarcharFactory;
@@ -116,6 +117,11 @@ class Index extends Action
      */
     protected $orderHelper;
 
+    /**
+     * @var PaymentHelper
+     */
+    protected $paymentHelper;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -135,6 +141,7 @@ class Index extends Action
         \Amazingcard\JsonApi\Helper\Product $productHelper,
         \Amazingcard\JsonApi\Helper\Order $orderHelper,
         Pager $pagerHelper,
+        PaymentHelper $paymentHelper,
         UrlWorker $urlWorker
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
@@ -155,6 +162,8 @@ class Index extends Action
         $this->coreProductCollection = $coreProductCollection;
         $this->pagerHelper = $pagerHelper;
         $this->orderHelper = $orderHelper;
+        $this->paymentHelper = $paymentHelper;
+
         parent::__construct($context);
 
         $this->initialize();
@@ -492,6 +501,7 @@ class Index extends Action
         ];
 
         $placedOrderInfo = $this->orderHelper->placeOrder($username, $password, $orderData);
+
         return $this->responseFormatter->formatPlaceOrderApi($placedOrderInfo);
     }
 
@@ -502,12 +512,12 @@ class Index extends Action
      * @return array
      */
     protected function mobilePaymentRedirectApi($request) {
-        $orderKey = $request->getParam('orderKey');
+        $orderKey = $request->getParam('orderKey'); // useless in magento, i guess...
         $orderId = $request->getParam('orderID');
-        $paymentMethodId = $request->getParam('paymentMethodID');
+        $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
         $data = $this->orderHelper->getRedirectPaymentUrl($orderId, $paymentMethodId);
-
+        die(var_dump($data));
         return [];
     }
 
@@ -520,7 +530,7 @@ class Index extends Action
     protected function mobilePaymentRedirectAuthorizeDotNetApi($request) {
         $orderKey = $request->getParam('orderKey');
         $orderId = $request->getParam('orderID');
-        $paymentMethodId = $request->getParam('paymentMethodID');
+        $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
         return [];
     }
@@ -671,6 +681,7 @@ class Index extends Action
      */
     protected function getSinglePaymentGatewayMeta($request) {
         $key = $request->getParam('key');
+        //$this->paymentHelper->get
         return [];
     }
 
@@ -686,8 +697,27 @@ class Index extends Action
 
     /**
      * Get all items in specified cart
+     *
+     * @param $request \Magento\Framework\App\RequestInterface
+     * @return array
      */
     protected function getItemsInCart($request) {
+        $cartId = $request->getParam('cartId');
+
+        if(!isset($cartId)) {
+            return [
+                'error'     => -1,
+                'reason'    => 'CartId is required!!1!'
+            ];
+        }
+    }
+
+    protected function getPaymentList() {
+        return $this->paymentHelper->getPaymentArray();
+    }
+
+    protected function getPaymentGateways() {
+        return $this->paymentHelper->getPaymentGateways();
     }
     #endregion
 }

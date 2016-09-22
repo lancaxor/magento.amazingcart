@@ -7,6 +7,7 @@
  */
 
 namespace Amazingcard\JsonApi\Helper;
+use Magento\CatalogUrlRewrite\Model\ResourceModel\Category\ProductCollection;
 use Magento\Quote\Api\Data\AddressInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 
@@ -459,45 +460,37 @@ class ResponseFormatter
      * @return array
      */
     public function formatCartApi($cartApiInfo) {
+        if(!isset($cartApiInfo['cart'])) {
+            return [
+                'error' => -1,
+                'response'  => 'No cart was created'
+            ];
+        }
+
+        /** @var \Magento\Checkout\Model\Cart $cart */
+        $cart = $cartApiInfo['cart'];
+        $coupon = $cartApiInfo['coupon'];
+        $payments = $cartApiInfo['paymentMethod'];
+
+        $formattedCartItems = $this->formatCartItems($cart);
+        $formattedPayments = $this->formatPaymentMethodArray($payments);
         return [
             'cart'  => [
+                $formattedCartItems
             ],
-            'coupon'    => [
-                'applied-coupon'    => [],
-                'discount-ammount'  => [],
-                'coupon-array-inserted'    => []
-            ],
-            'has_tax'   => '',
-            'currency'  => '',
-            'display-price-during-cart-checkout',
-            'cart-subtotal' => '',
-            'cart-subtotal-ex-tax'  => '',
-            'cart-tax-total'    => '',
-            'shipping-cost'     => '',
-            'shipping-method'   => '',
-            'discount'          => '',
-            'grand-total'       => '',
-            'payment-method'    => [
-                [           // pay method sample
-                    'id'    => 'cheque',
-                    'title' => 'cheque payment',
-                    'description'   => 'please send your cheque to store name, store street, store town, store state/country, store postcode.',
-                    'meta_key'  => [
-                        'hideit'    => '',
-                        'safari'    => ''
-                    ]
-                ],
-                [
-                    'id'    => 'cheque',
-                    'title' => 'cheque payment',
-                    'description'   => 'please send your cheque to store name, store street, store town, store state/country, store postcode.',
-                    'meta_key'  => [
-                        'hideit'    => '',
-                        'safari'    => ''
-                    ]
-                ],
-            ],
-            'shipping_available'    => null
+            'coupon'    => $coupon,
+            'has_tax' => boolval($cart->getQuote()->getShippingAddress()->getTaxAmount()),
+            'currency' => $cart->getQuote()->getCurrency(),
+            'display-price-during-cart-checkout' => true,
+            'cart-subtotal' => $cart->getQuote()->getShippingAddress()->getSubtotalInclTax(),
+            'cart-subtotal-ex-tax' => $cart->getQuote()->getSubtotal(),
+            'cart-tax-total' => $cart->getQuote()->getShippingAddress()->getTaxAmount(),
+            'shipping-cost' => $cart->getQuote()->getShippingAddress()->getAllTotalAmounts(),
+            'shipping-method' => $cart->getQuote()->getShippingAddress()->getShippingMethod(),
+            'discount' => ($cart->getQuote()->getSubtotal() - $cart->getQuote()->getSubtotalWithDiscount()),
+            'grand-total' => $cart->getQuote()->getGrandTotal(),
+            'payment-method' => $formattedPayments,
+            'shipping_available'    => !empty($cart->getQuote()->getAllShippingAddresses()) // idk other way to check it, just by checking number of addresses
         ];
     }
 
@@ -530,8 +523,47 @@ class ResponseFormatter
         ];
     }
 
+    /**
+     * @param $placedOrderInfo array
+     * @return array
+     */
     public function formatPlaceOrderApi($placedOrderInfo) {
-        return [];
+
+        if(isset($placeOrderInfo['error'])) {
+            return $placedOrderInfo;
+        }
+
+        $billingAddress = $placeOrderInfo['billing_address'];
+        $coupon = $placeOrderInfo['coupon'];
+
+        $order = $placedOrderInfo['order'];
+
+        return [
+            'orderID',
+            'order_key',
+            'display-price-during-cart-checkout',
+            'orderDate',
+            'paymentDate',
+            'status',
+            'currency',
+            'billing_email',
+            'billing_phone',
+            'billing_address',
+            'shipping_address',
+            'items',
+            'used_coupon',
+            'subtotalWithTax',
+            'subtotalExTax',
+            'shipping_method',
+            'shipping_cost',
+            'shipping_tax',
+            'tax_total',
+            'discount_total',
+            'order_total',
+            'order_note',
+            'payment_method_id',
+            'payment_method_title',
+        ];
     }
 
     /**
@@ -806,6 +838,59 @@ class ResponseFormatter
             ];
         }
         return $resultData;
+    }
+
+    /**
+     * @param $cart \Magento\Checkout\Model\Cart
+     * @return array
+     */
+    protected function formatCartItems($cart) {
+
+        /** @var \Magento\Eav\Model\Entity\Collection\AbstractCollection $cartItems */
+        $cartItems = $cart->getQuote()->getAllItems();
+        $result = [];
+
+        /**
+         * @var integer $key
+         * @var \Magento\Quote\Model\Quote\Item $item
+         */
+        foreach ($cartItems as $key => $item) {
+            $product = $item->getProduct();
+            $result[] = [
+                'id' => $product->getId(),
+                'product-price' => $product->getPrice(),
+                'product-tax'   => $item->getTaxAmount(),
+                'total-price'   => $item->getRowTotal(),
+                'total-tax'     => $item->getRowTotalInclTax() - $item->getRowTotal(),//$item->getTaxAmount() * $product->getQty(),
+                'quantity'      => $product->getQty()
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * @param $payment \Magento\Quote\Model\Quote\Payment
+     * @return array
+     */
+    protected function formatSinglePaymentMethod($payment) {
+
+        return [
+            'id' => $payment->getMethod(),
+            'title' => $payment->title,     // @see PaymentHelper
+            'description' => $payment->title,
+            'meta_key'  => [
+                'hideit' => '', // idk what is it, but it seems like woocommerce special keys
+                'safari' => ''
+            ]
+        ];
+    }
+
+    protected function formatPaymentMethodArray($payments) {
+        $result = [];
+        foreach($payments as $_ => $payment) {
+            $result[] = $this->formatSinglePaymentMethod($payment);
+        }
+        return $result;
     }
 
     //endregion

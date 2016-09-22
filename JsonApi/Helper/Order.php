@@ -88,9 +88,14 @@ class Order
     protected $quotePaymentFactory;
 
     /**
-     * @var \Amazingcard\JsonApi\Helper\Payment
+     * @var \Amazingcard\JsonApi\Helper\PaymentHelper
      */
     protected $paymentHelper;
+
+    /**
+     * @var Quote
+     */
+    protected $quoteHelper;
 
     public function __construct(
         User $userHelper,
@@ -105,7 +110,8 @@ class Order
         AddressRepositoryInterface $customerAddressRepository,
         OrderPaymentRepositoryInterface $orderPaymentRepository,
         PaymentFactory $quotePaymentFactory,
-        \Amazingcard\JsonApi\Helper\Payment $paymentHelper
+        PaymentHelper $paymentHelper,
+        Quote $quoteHelper
     ) {
         $this->userHelper = $userHelper;
         $this->orderRepository = $orderRepository;
@@ -120,6 +126,7 @@ class Order
         $this->orderPaymentRepository = $orderPaymentRepository;
         $this->quotePaymentFactory = $quotePaymentFactory;
         $this->paymentHelper = $paymentHelper;
+        $this->quoteHelper = $quoteHelper;
     }
 
     /**
@@ -138,6 +145,12 @@ class Order
             return $loginInfo;
         }
 
+        if($filter && !is_array($filter)) {
+            $filter = [$filter];
+        }
+        /**
+         * @see http://magento.stackexchange.com/questions/95608/orders-collection-magento-2
+         */
         switch ($filter) {
             case null:
             case '':
@@ -149,9 +162,9 @@ class Order
                 break;
             case 'Pending Payment':
                 break;
-            case 'Completed':
+            case 'Completed':   // closed
                 break;
-            case 'Refunded':
+            case 'Refunded':    // Canceled?
                 break;
             case 'Failed':
                 break;
@@ -220,7 +233,7 @@ class Order
     }
 
     /**
-     * @TODO: test it
+     * Create order using cart
      * @param $login
      * @param $password
      * @param $orderData array [
@@ -232,6 +245,72 @@ class Order
      * @return array
      */
     public function placeOrder($login, $password, $orderData) {
+
+        $cartInfo = $this->quoteHelper->cartApi($login, $password, $orderData['productJson'], $orderData['couponCodeJson']);
+        if(isset($cartInfo['error'])) {
+            return $cartInfo;
+        }
+
+        $loginData = $cartInfo['loginData'];
+        $customer = $loginData['data']['customer'];
+
+        /** @var \Magento\Checkout\Model\Cart $cart */
+        $cart = $cartInfo['cart'];
+        $quote = $cart->getQuote();
+
+        if(isset($orderData['paymentMethodId'])) {
+
+            /** @var PaymentHelper $paymentModel */
+            $paymentModel = $this->quotePaymentFactory->create();
+            $paymentModel->getResource()
+                ->load($paymentModel, $orderData['paymentMethodId']);
+            $paymentModel->setQuote($quote);
+            $quote->setPayment($paymentModel);
+            $quote->getPayment()->setMethod($paymentModel->getMethod());   // damn......
+
+        } else {
+            return [
+                'error' => 2,
+                'reason'    => 'Missing required parameter paymentMethodID!'
+            ];
+        }
+
+        $quote->collectTotals();
+
+        try {
+            $this->quoteManagement->placeOrder($cart->getQuote()->getId(), $paymentModel);
+            $submittedOrder = $this->quoteManagement->submit($quote);
+
+        } catch(LocalizedException $exception) {
+            return [
+                'error'     => 1,
+                'reason'    => $exception->getMessage()
+            ];
+        }
+
+        return [
+            'status'    => 0,
+            'reason'    => 'OK',
+            'data'      => [
+                'order' => $submittedOrder,
+                'customer'  => $customer,
+                'payment'   => $paymentModel
+            ]
+        ];
+    }
+    /**
+     * @TODO: test it
+     * @param $login
+     * @param $password
+     * @param $orderData array [
+     *       productJson
+     *       couponCodeJson
+     *       paymentMethodId
+     *       orderNotes
+     * ]
+     * @return array
+     */
+    public function placeOrder___BAK($login, $password, $orderData) {
 
         $loginData = $this->userHelper->login($login, $password);
         if(isset($loginData['error'])) {
@@ -295,7 +374,7 @@ class Order
 
         if(isset($orderData['paymentMethodId'])) {
 
-            /** @var Payment $paymentModel */
+            /** @var PaymentHelper $paymentModel */
             $paymentModel = $this->quotePaymentFactory->create();
             $paymentModel->getResource()
                 ->load($paymentModel, $orderData['paymentMethodId']);
@@ -334,7 +413,14 @@ class Order
         ];
     }
 
+    /**
+     * @param $orderId
+     * @param $paymentMethodId
+     * @return string
+     */
     public function getRedirectPaymentUrl($orderId, $paymentMethodId) {
-        $this->paymentHelper->getPaymentRedirectUrl($paymentMethodId);
+
+        // TODO: some operations with orders
+        return $this->paymentHelper->getPaymentRedirectUrl($paymentMethodId);
     }
 }

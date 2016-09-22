@@ -98,6 +98,11 @@ class Quote
      */
     protected $quoteAddressFactory;
 
+    /**
+     * @var PaymentHelper
+     */
+    protected $paymentHelper;
+
 
     /**
      * @var \Magento\Quote\Model\Quote\AddressFactory
@@ -118,7 +123,8 @@ class Quote
         \Magento\Sales\Api\OrderPaymentRepositoryInterface $orderPaymentRepository,
         \Magento\Quote\Model\QuoteManagement $quoteManagement,
         \Magento\Quote\Api\Data\PaymentInterface $quotePayment,
-        AddressFactory $quoteAddressFactory
+        AddressFactory $quoteAddressFactory,
+        PaymentHelper $paymentHelper
     ) {
         $this->userHelper = $userHelper;
         $this->cart = $cart;
@@ -134,6 +140,7 @@ class Quote
         $this->quoteManagement = $quoteManagement;
         $this->quotePayment = $quotePayment;
         $this->quoteAddressFactory = $quoteAddressFactory;
+        $this->paymentHelper = $paymentHelper;
 //        $this->quoteAddressObject = $addressObject;
     }
 
@@ -156,16 +163,20 @@ class Quote
             ];
         }
 
-        $paymentGateways = [];
-        $cartContent = [];
+        /** @var CustomerInterface $customer */
+        $customer = $loginData['data']['customer'];
+        $this->cart->getQuote()->setCustomer($customer);
 
         //--- products
         $stripProductId = stripslashes($productIdJSON);
         $productIds = json_decode($stripProductId);
 
-        /**
-         * @see http://magento.stackexchange.com/questions/115929/magento2-how-to-add-a-product-into-cart-programatically-when-checkout-cart-pro
-         */
+        // Clearing the cart
+        /** @var \Magento\Quote\Model\Quote\Item $item */
+        foreach ($this->cart->getItems() as $item) {
+            $this->cart->removeItem($item->getId());
+        }
+
         foreach ($productIds as $id => $qty) {
             $product = $this->productRepository->getById($id);
             $params = [
@@ -177,7 +188,6 @@ class Quote
             $isInStock = $this->stockState->verifyStock($id);
 
             if($isInStock) {
-
                 try {
                     $this->cart->addProduct($product, $params);
                 } catch (LocalizedException $exception) {
@@ -191,9 +201,9 @@ class Quote
 
         //--- coupons
         $coupons = [
-            'applied-coupon'    => [],
-            'discount-ammount'  => [],
-            'coupon-array-inserted'    => []
+            'applied-coupon'        => [],
+            'discount-ammount'      => [],
+            'coupon-array-inserted' => []
         ];
 
         if(isset($couponCodeJSON)) {
@@ -201,56 +211,38 @@ class Quote
             $couponCodes = json_decode($stripCouponCode);
         }
 
-        if(isset($couponCodes)) {
+        // work with coupons
+        if(!empty($couponCodes)) {
 
-            if(!is_array($couponCodes)) {
-                $couponCodes = [$couponCodes];
+            $couponCode = is_array($couponCodes) ? current($couponCodes) : $couponCodes;    // string only
+
+            $coupons['coupon-array-inserted'][] = $couponCode;
+            $this->cart->getQuote()->setCouponCode($couponCode);
+            $discount = 0.0;
+
+            // count total discount
+            foreach($this->cart->getQuote()->getAllItems() as $item) {
+                $discount += $item->getDiscountAmount();
             }
+            $coupons['discount-ammount'] = $discount;
 
-            $salesModel = $this->salesRuleFactory->create();
-            foreach ($couponCodes as $_ => $code) {
-
-                $this->cart->getQuote()->setCouponCode($code);
-
-                $ruleId = $this->salesRuleCouponFactory->create()
-                    ->setCode($code)
-                    ->getRuleId();
-
-
-
-                $this->cart->getQuote()->setAppliedRuleIds($ruleId);
-
-//                $coupons = $salesModel->getCoupons();
-                // TODO: add catalog price rules
-
-                // TODO: get really applied coupons
-                // TODO: get these applied coupons summary discount
-                $coupons['coupon-array-inserted'][] = $code;
+            if($discount) {
+                $coupons['applied-coupon'][] = $couponCode;
             }
         }
 
-        $strRuleIds = $this->cart->getQuote()->getAppliedRuleIds();
-        die(var_dump('applied rules', $strRuleIds));
-        $ruleIds = explode(',', $strRuleIds);
-        $rules = $this->salesRuleFactory->create()
-            ->getCollection()
-            ->addFieldToFilter('rule_id', array('in'    => $ruleIds));
-
-        foreach ($rules as $rule) {
-            // TODO: count discount
-        }
-
-        $items = $this->cart->getQuote()->getItemsCollection();
-
-        // TODO: count total
+        $this->cart->getQuote()->collectTotals();
 
         //--- gateways
-        // TODO: get all gateways and check for availability
-
+//        $paymentGateways = $this->paymentHelper->getPaymentArray();
+        $paymentMethods = $this->paymentHelper->getPaymentCollection();
 
         $this->cart->save();
         return [
-            'coupon'
+            'cart'              => $this->cart,
+            'coupon'            => $coupons,
+            'paymentMethod'     => $paymentMethods,
+            'customerInfo'      => $loginData
         ];
     }
 
