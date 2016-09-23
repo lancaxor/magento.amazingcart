@@ -343,6 +343,11 @@ class Quote
         ];
     }
 
-
-
+    /**
+     *
+     */
+    public function getItemsInCart($cartId) {
+        $model = $this->quoteFactory->create();
+//        $model->
+    }
 }

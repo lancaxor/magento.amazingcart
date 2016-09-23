@@ -442,7 +442,7 @@ class ResponseFormatter
                 ]
             ],
             'instragram_api'    => [
-                'client_id' => ''
+                'client_id' => false
             ]
         ];
     }
@@ -529,40 +529,42 @@ class ResponseFormatter
      */
     public function formatPlaceOrderApi($placedOrderInfo) {
 
-        if(isset($placeOrderInfo['error'])) {
+        if(isset($placedOrderInfo['error'])) {
             return $placedOrderInfo;
         }
 
-        $billingAddress = $placeOrderInfo['billing_address'];
-        $coupon = $placeOrderInfo['coupon'];
+        /** @var \Magento\Sales\Model\Order $order */
+        $order = $placedOrderInfo['data']['order'];
 
-        $order = $placedOrderInfo['order'];
+        /** @var \Magento\Quote\Model\Quote\Payment $payment */
+        $payment = $placedOrderInfo['data']['payment'];
+
 
         return [
-            'orderID',
-            'order_key',
-            'display-price-during-cart-checkout',
-            'orderDate',
-            'paymentDate',
-            'status',
-            'currency',
-            'billing_email',
-            'billing_phone',
-            'billing_address',
-            'shipping_address',
-            'items',
-            'used_coupon',
-            'subtotalWithTax',
-            'subtotalExTax',
-            'shipping_method',
-            'shipping_cost',
-            'shipping_tax',
-            'tax_total',
-            'discount_total',
-            'order_total',
-            'order_note',
-            'payment_method_id',
-            'payment_method_title',
+            'orderID' => $order->getEntityId(),
+            'order_key' => '',
+            'display-price-during-cart-checkout' => true,
+            'orderDate' => $order->getCreatedAt(),
+            'paymentDate' => $order->getCreatedAt(),        // You cannot create order without payment!!1!
+            'status' => $order->getStatus(),
+            'currency' => $order->getOrderCurrencyCode(),
+            'billing_email' => '', // no BILLING email in magento, only customer, just remember it!
+            'billing_phone' => $order->getBillingAddress()->getTelephone(),
+            'billing_address' => $this->formatQuoteAddress($order->getBillingAddress()),
+            'shipping_address' => $order->getShippingAddress()->toString(),
+            'items' => $this->formatOrderItems($order->getAllItems()),
+            'used_coupon' => boolval($order->getCouponCode()),  // '' or [] will be converted to false
+            'subtotalWithTax' => $order->getSubtotalInclTax(),
+            'subtotalExTax' => $order->getSubtotal(),
+            'shipping_method' => $order->getShippingMethod(),
+            'shipping_cost' => $order->getShippingAmount(),
+            'shipping_tax' => $order->getShippingTaxAmount(),
+            'tax_total' => $order->getTaxAmount(),
+            'discount_total' => $order->getDiscountAmount(),
+            'order_total' => $order->getTotalPaid(),
+            'order_note' => $order->getCustomerNote(),
+            'payment_method_id' => $payment->getMethod(),
+            'payment_method_title' => $order->title     // yh, the same hack from PaymentHelper
         ];
     }
 
@@ -660,11 +662,16 @@ class ResponseFormatter
         return $formattedOrders;
     }
 
+    /**
+     * @param $paymentGatewayInfo mixed
+     * @return array
+     */
+    public function formatGetSinglePaymentGatewayMeta($paymentGatewayInfo) {
+        return $paymentGatewayInfo;
+    }
 
     // TODO: formatMobilePaymentRedirectApi
     // TODO: formatMobilePaymentRedirectAuthorizeDotNetApi
-    // TODO: formatGetSettings
-    // TODO: formatGetSinglePaymentGatewayMeta
 
 
     //region private/protected service functions

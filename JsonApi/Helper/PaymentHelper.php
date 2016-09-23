@@ -64,7 +64,8 @@ class PaymentHelper
 
         $payment = $this->getPaymentModelById($paymentId);
 
-        die(var_dump($payment->getMethod()));
+
+        die(var_dump($paymentId, $payment->getMethod()));
 
         $orderPlaceUrl = $payment->getOrderPlaceRedirectUrl();
         $checkoutUrl = $payment->getCheckoutRedirectUrl();
@@ -85,15 +86,15 @@ class PaymentHelper
     public function getPaymentArray() {
         $collection = $this->paymentCollectionFactory->create()
             ->addFieldToSelect('*');
-//        $paymentItems = $collection->getItems();
 
         $data = [];
 
+        /** @var \Magento\Quote\Model\Quote\Payment $payment */
         foreach ($collection as $payment) {
 
             $dataItem = [
                 'id'            => $payment->getMethod(),
-                'title'         => $payment->getTitle()
+                'title'         => $this->getPaymentTitle($payment->getMethod())
 //                'description'   => '',        // magento has no payment description...
 //                'meta_key'      => ''         // ...and meta-key...
             ];
@@ -113,9 +114,7 @@ class PaymentHelper
             ->addFieldToSelect('*');
 
         foreach($collection as &$payment) {
-            $payment->title = $this->scopeConfig->getValue('payment/' . $payment->getMethod() . '/title',   // dynamically add object's field? The worst solution. I`m mad 0_o
-                \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-            );
+            $payment->title = $this->getPaymentTitle($payment->getMethod());
         }
         return $collection;
     }
@@ -134,10 +133,7 @@ class PaymentHelper
         // let paymentId = code of gateway
         foreach ($activeMethods as $paymentCode => $paymentModel) {
             $paymentItem = [
-                'title'     => $this->scopeConfig->getValue(
-                    'payment/' . $paymentCode . '/title',
-                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-                ),
+                'title'     => $this->getPaymentTitle($paymentCode),
                 'code'      => $paymentCode,
                 'model'     => $paymentModel
             ];
@@ -152,8 +148,18 @@ class PaymentHelper
         ];
     }
 
-    public function getPaymentMetaByKey($paymentKey) {
-//        $this->paymentConfig
+    public function getPaymentTitle($paymentCode) {
+        return $this->scopeConfig->getValue(
+            'payment/' . $paymentCode . '/title',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
+    }
 
+    public function getPaymentMetaByKey($paymentKey) {
+        return [
+            'key'       => $paymentKey,
+            'safari'    => 0,
+            'hideit'    => 0
+        ];
     }
 }

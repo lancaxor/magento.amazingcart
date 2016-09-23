@@ -674,15 +674,15 @@ class Index extends Action
     }
 
     /**
-     * @TODO: idk what the XPEH is this doing here, but we need to do it! >.<
+     * idk what the XPEH is this doing here, but we need to do it! >.<
      *
      * @param $request \Magento\Framework\App\RequestInterface
      * @return array
      */
     protected function getSinglePaymentGatewayMeta($request) {
         $key = $request->getParam('key');
-        //$this->paymentHelper->get
-        return [];
+        $paymentInfo = $this->paymentHelper->getPaymentMetaByKey($key);
+        return $this->responseFormatter->formatGetSinglePaymentGatewayMeta($paymentInfo);
     }
 
     #region service actions
@@ -710,6 +710,7 @@ class Index extends Action
                 'reason'    => 'CartId is required!!1!'
             ];
         }
+//        return $this->quoteHelper->
     }
 
     protected function getPaymentList() {

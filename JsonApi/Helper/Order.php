@@ -251,7 +251,7 @@ class Order
             return $cartInfo;
         }
 
-        $loginData = $cartInfo['loginData'];
+        $loginData = $cartInfo['customerInfo'];
         $customer = $loginData['data']['customer'];
 
         /** @var \Magento\Checkout\Model\Cart $cart */
@@ -260,7 +260,7 @@ class Order
 
         if(isset($orderData['paymentMethodId'])) {
 
-            /** @var PaymentHelper $paymentModel */
+            /** @var \Magento\Quote\Model\Quote\Payment $paymentModel */
             $paymentModel = $this->quotePaymentFactory->create();
             $paymentModel->getResource()
                 ->load($paymentModel, $orderData['paymentMethodId']);
@@ -277,8 +277,12 @@ class Order
 
         $quote->collectTotals();
 
+        if($orderData['orderNotes']) {
+            $quote->setCustomerNote($orderData['orderNotes']);
+        }
+
         try {
-            $this->quoteManagement->placeOrder($cart->getQuote()->getId(), $paymentModel);
+            $this->quoteManagement->placeOrder($cart->getQuote()->getId(),  $paymentModel);
             $submittedOrder = $this->quoteManagement->submit($quote);
 
         } catch(LocalizedException $exception) {
@@ -310,108 +314,108 @@ class Order
      * ]
      * @return array
      */
-    public function placeOrder___BAK($login, $password, $orderData) {
-
-        $loginData = $this->userHelper->login($login, $password);
-        if(isset($loginData['error'])) {
-
-            return [
-                'error'     => 1,
-                'reason'    => 'Not Authorized'
-            ];
-        }
-
-        /** @var CustomerInterface $customer */
-        $customer = $loginData['data']['customer'];
-
-        if(!isset($orderData['productJson'])) {
-            return [
-                'error' => 1,
-                'reason'    => 'Missing required parameter productIDJson!'
-            ];
-        }
-
-        $stripProductId = stripslashes($orderData['productJson']);
-        $productIds = json_decode($stripProductId);
-
-        $newCart = $this->quoteManagement->createEmptyCart();
-        $quoteModel = $this->quoteFactory->create();
-//        $quoteModel->setCustomer($customer);      // deprecated? see comment to setCustomer
-        $quoteModel->setCurrency();
-        $quoteModel->assignCustomer($customer); // assign the quote to customer
-
-
-        foreach($productIds as $id => $quantity) {
-            $product = $this->productRepository->getById($id);
-            try {
-                $quoteModel->addProduct($product, intval($quantity));
-            } catch(LocalizedException $exception) {
-
-            }
-        }
-
-        $shippingAddressId = $customer->getDefaultShipping();
-        $customerShippingAddress = $this->customerAddress->getById($shippingAddressId);
-
-        /** @var \Magento\Quote\Model\Quote\Address $quoteAddressModel */
-        $quoteAddressModel = $this->quoteAddressFactory->create();
-        $quoteAddressModel->importCustomerAddressData($customerShippingAddress);
-        $quoteAddressModel->setQuote($quoteModel)
-//            ->setShippingMethod('Free')
-            ->setShippingMethod('flatrate_flatrate')
-            ->setCollectShippingRates(true);
-
-        $quoteModel->setShippingAddress($quoteAddressModel);
-
-        if (isset($orderData['couponCodeJson'])) {
-            $stripCouponCode = stripslashes($orderData['couponCodeJson']);
-            $couponCodes = json_decode($stripCouponCode);
-
-            if (!empty($couponCodes)) {
-                $quoteModel->setCouponCode(is_array($couponCodes) ? current($couponCodes) : $quoteModel);
-            }
-        }
-
-        if(isset($orderData['paymentMethodId'])) {
-
-            /** @var PaymentHelper $paymentModel */
-            $paymentModel = $this->quotePaymentFactory->create();
-            $paymentModel->getResource()
-                ->load($paymentModel, $orderData['paymentMethodId']);
-            $paymentModel->setQuote($quoteModel);
-            $quoteModel->setPayment($paymentModel);
-            $quoteModel->getPayment()->setMethod($paymentModel->getMethod());   // damn......
-
-        } else {
-            return [
-                'error' => 2,
-                'reason'    => 'Missing required parameter paymentMethodID!'
-            ];
-        }
-
-        $quoteModel->collectTotals();
-
-        try {
-            $this->quoteManagement->placeOrder($newCart, $paymentModel);
-            $submittedOrder = $this->quoteManagement->submit($quoteModel);
-
-        } catch(LocalizedException $exception) {
-            return [
-                'error'     => 1,
-                'reason'    => $exception->getMessage()
-            ];
-        }
-
-        return [
-            'status'    => 0,
-            'reason'    => 'OK',
-            'data'      => [
-                'order' => $submittedOrder,
-                'customer'  => $customer,
-                'payment'   => isset($paymentModel) ? $paymentModel : null
-            ]
-        ];
-    }
+//    public function placeOrder___BAK($login, $password, $orderData) {
+//
+//        $loginData = $this->userHelper->login($login, $password);
+//        if(isset($loginData['error'])) {
+//
+//            return [
+//                'error'     => 1,
+//                'reason'    => 'Not Authorized'
+//            ];
+//        }
+//
+//        /** @var CustomerInterface $customer */
+//        $customer = $loginData['data']['customer'];
+//
+//        if(!isset($orderData['productJson'])) {
+//            return [
+//                'error' => 1,
+//                'reason'    => 'Missing required parameter productIDJson!'
+//            ];
+//        }
+//
+//        $stripProductId = stripslashes($orderData['productJson']);
+//        $productIds = json_decode($stripProductId);
+//
+//        $newCart = $this->quoteManagement->createEmptyCart();
+//        $quoteModel = $this->quoteFactory->create();
+////        $quoteModel->setCustomer($customer);      // deprecated? see comment to setCustomer
+//        $quoteModel->setCurrency();
+//        $quoteModel->assignCustomer($customer); // assign the quote to customer
+//
+//
+//        foreach($productIds as $id => $quantity) {
+//            $product = $this->productRepository->getById($id);
+//            try {
+//                $quoteModel->addProduct($product, intval($quantity));
+//            } catch(LocalizedException $exception) {
+//
+//            }
+//        }
+//
+//        $shippingAddressId = $customer->getDefaultShipping();
+//        $customerShippingAddress = $this->customerAddress->getById($shippingAddressId);
+//
+//        /** @var \Magento\Quote\Model\Quote\Address $quoteAddressModel */
+//        $quoteAddressModel = $this->quoteAddressFactory->create();
+//        $quoteAddressModel->importCustomerAddressData($customerShippingAddress);
+//        $quoteAddressModel->setQuote($quoteModel)
+////            ->setShippingMethod('Free')
+//            ->setShippingMethod('flatrate_flatrate')
+//            ->setCollectShippingRates(true);
+//
+//        $quoteModel->setShippingAddress($quoteAddressModel);
+//
+//        if (isset($orderData['couponCodeJson'])) {
+//            $stripCouponCode = stripslashes($orderData['couponCodeJson']);
+//            $couponCodes = json_decode($stripCouponCode);
+//
+//            if (!empty($couponCodes)) {
+//                $quoteModel->setCouponCode(is_array($couponCodes) ? current($couponCodes) : $quoteModel);
+//            }
+//        }
+//
+//        if(isset($orderData['paymentMethodId'])) {
+//
+//            /** @var PaymentHelper $paymentModel */
+//            $paymentModel = $this->quotePaymentFactory->create();
+//            $paymentModel->getResource()
+//                ->load($paymentModel, $orderData['paymentMethodId']);
+//            $paymentModel->setQuote($quoteModel);
+//            $quoteModel->setPayment($paymentModel);
+//            $quoteModel->getPayment()->setMethod($paymentModel->getMethod());   // damn......
+//
+//        } else {
+//            return [
+//                'error' => 2,
+//                'reason'    => 'Missing required parameter paymentMethodID!'
+//            ];
+//        }
+//
+//        $quoteModel->collectTotals();
+//
+//        try {
+//            $this->quoteManagement->placeOrder($newCart, $paymentModel);
+//            $submittedOrder = $this->quoteManagement->submit($quoteModel);
+//
+//        } catch(LocalizedException $exception) {
+//            return [
+//                'error'     => 1,
+//                'reason'    => $exception->getMessage()
+//            ];
+//        }
+//
+//        return [
+//            'status'    => 0,
+//            'reason'    => 'OK',
+//            'data'      => [
+//                'order' => $submittedOrder,
+//                'customer'  => $customer,
+//                'payment'   => isset($paymentModel) ? $paymentModel : null
+//            ]
+//        ];
+//    }
 
     /**
      * @param $orderId
