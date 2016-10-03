@@ -19,7 +19,7 @@ If no branch 'product' exists on current machine, add flag -b:
 
 5) Push updates to server:
 
-`git push origin product`
+`git push --all`
 
 ##On server
 
