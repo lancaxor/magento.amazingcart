@@ -1,5 +1,7 @@
 ##On developer workstation
-1) Edit the module code in master branch;
+1) Edit the module code in master branch, then commit changes:
+
+`git commit -am "<Few words about changes in this commit>"`
 
 2) If someone changed a code in the repository -- we have to get these changes:
 
