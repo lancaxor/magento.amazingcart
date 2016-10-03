@@ -64,7 +64,7 @@ class PaymentHelper
 
         $payment = $this->getPaymentModelById($paymentId);
 
-
+        $payment->getConfig();
         die(var_dump($paymentId, $payment->getMethod()));
 
         $orderPlaceUrl = $payment->getOrderPlaceRedirectUrl();
@@ -94,8 +94,8 @@ class PaymentHelper
 
             $dataItem = [
                 'id'            => $payment->getMethod(),
-                'title'         => $this->getPaymentTitle($payment->getMethod())
-//                'description'   => '',        // magento has no payment description...
+                'title'         => $this->getPaymentTitle($payment->getMethod()),
+                'description'   => $payment->getAdditionalInformation(),        // magento has no payment description...
 //                'meta_key'      => ''         // ...and meta-key...
             ];
 

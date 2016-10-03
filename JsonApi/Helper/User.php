@@ -65,6 +65,7 @@ class User
      */
     private $addressRepository;
 
+
     public function __construct(
         AccountManagementInterface $customerAccountManagement,
         CustomerInterface   $customer,

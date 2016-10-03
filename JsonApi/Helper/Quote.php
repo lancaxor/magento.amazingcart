@@ -104,10 +104,7 @@ class Quote
     protected $paymentHelper;
 
 
-    /**
-     * @var \Magento\Quote\Model\Quote\AddressFactory
-     */
-//    protected $quoteAddressObject;
+//    protected $cartBlock;
 
     public function __construct(
         User $userHelper,
@@ -125,6 +122,8 @@ class Quote
         \Magento\Quote\Api\Data\PaymentInterface $quotePayment,
         AddressFactory $quoteAddressFactory,
         PaymentHelper $paymentHelper
+
+//        \Magento\Checkout\Block\Cart $cartBlock
     ) {
         $this->userHelper = $userHelper;
         $this->cart = $cart;
@@ -141,7 +140,7 @@ class Quote
         $this->quotePayment = $quotePayment;
         $this->quoteAddressFactory = $quoteAddressFactory;
         $this->paymentHelper = $paymentHelper;
-//        $this->quoteAddressObject = $addressObject;
+//        $this->cartBlock = $cartBlock;
     }
 
     /**
@@ -233,6 +232,7 @@ class Quote
 
         $this->cart->getQuote()->collectTotals();
 
+//        $this->cart->getC
         //--- gateways
 //        $paymentGateways = $this->paymentHelper->getPaymentArray();
         $paymentMethods = $this->paymentHelper->getPaymentCollection();

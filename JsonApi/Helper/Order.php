@@ -21,6 +21,8 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\QuoteManagement;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order\Status;
+use Magento\Sales\Model\Order\StatusFactory;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Api\OrderManagementInterface;
 use \Magento\Sales\Api\OrderPaymentRepositoryInterface;
@@ -97,6 +99,11 @@ class Order
      */
     protected $quoteHelper;
 
+    /**
+     * @var \Magento\Sales\Model\Order\StatusFactory
+     */
+    protected $oderStatusFactory;
+
     public function __construct(
         User $userHelper,
         OrderRepositoryInterface $orderRepository,
@@ -107,6 +114,7 @@ class Order
         QuoteManagement $quoteManagement,
         AddressFactory $addressFactory,
         QuoteFactory $quoteFactory,
+        StatusFactory $statusFactory,
         AddressRepositoryInterface $customerAddressRepository,
         OrderPaymentRepositoryInterface $orderPaymentRepository,
         PaymentFactory $quotePaymentFactory,
@@ -122,6 +130,7 @@ class Order
         $this->productRepository = $productRepository;
         $this->quoteAddressFactory = $addressFactory;
         $this->quoteFactory = $quoteFactory;
+        $this->orderStatusFactory = $statusFactory;
         $this->customerAddress = $customerAddressRepository;
         $this->orderPaymentRepository = $orderPaymentRepository;
         $this->quotePaymentFactory = $quotePaymentFactory;
@@ -148,28 +157,40 @@ class Order
         if($filter && !is_array($filter)) {
             $filter = [$filter];
         }
+
+        $currentStatus = '';
         /**
          * @see http://magento.stackexchange.com/questions/95608/orders-collection-magento-2
          */
         switch ($filter) {
-            case null:
-            case '':
-                // TODO: all;
-                break;
             case 'On Hold':
+                $currentStatus = 'holded';
                 break;
             case 'Processing':
+                $currentStatus = 'processing';
                 break;
             case 'Pending Payment':
+                $currentStatus = 'pending_payment';
                 break;
-            case 'Completed':   // closed
+            case 'Completed':
+                $currentStatus = 'complete';
                 break;
             case 'Refunded':    // Canceled?
+                $currentStatus = 'canceled';
                 break;
             case 'Failed':
+                $currentStatus = 'canceled';    // idk what is this
                 break;
+            case null:
+            case '':
             default:
                 break;
+        }
+
+        $orderModel = $this->orderFactory->create();
+        $orderCollection = $orderModel->getCollection();
+        if($currentStatus) {
+            $orderCollection->addFieldToFilter('status', $currentStatus);
         }
 
         /** @var CustomerInterface $customer */
@@ -424,7 +445,16 @@ class Order
      */
     public function getRedirectPaymentUrl($orderId, $paymentMethodId) {
 
+
         // TODO: some operations with orders
         return $this->paymentHelper->getPaymentRedirectUrl($paymentMethodId);
+    }
+
+    public function getStatusList() {
+
+        /** @var Status $model */
+        $model = $this->orderStatusFactory->create();
+        $data = $model->getCollection()->getData();
+        return $data;
     }
 }

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ $EUID -ne 0 ];
+if [ ! -w ~/www/magento/var/generation ];
 then
- echo "Root required!"
+ echo "Crap... I have no write access to ~/www/magento/var/generation..."
  exit 1
 fi
 

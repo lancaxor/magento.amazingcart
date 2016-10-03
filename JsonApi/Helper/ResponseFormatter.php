@@ -21,9 +21,16 @@ use Magento\Sales\Api\Data\OrderInterface;
 class ResponseFormatter
 {
 
-    public function __construct()
-    {
+    /**
+     * @var PaymentHelper
+     */
+    private $paymentHelper;
 
+    public function __construct(
+        PaymentHelper $paymentHelper
+    )
+    {
+        $this->paymentHelper = $paymentHelper;
     }
 
     public function formatError($message, $code) {
@@ -422,26 +429,30 @@ class ResponseFormatter
         ];
     }
 
-    public function formatSettings() {
+    public function formatSettings($settingsInfo) {
+        $orderStatusArray = [];
+        if(!empty($settingsInfo->orderStatusList)) {
+            foreach ($settingsInfo->orderStatusList as $_ => $status) {
+                $orderStatusArray[] = [
+                    'status_slug' => $status['status'],
+                    'status_label' => $status['label']
+                ];
+            }
+        }
         return [
-            'currency',
-            'currency_symbol',
+            'currency' => $settingsInfo->currency,
+            'currency_symbol' => $settingsInfo->currencySign,
             'appearance_option' => [
-                'category_browse_option'        => '',
-                'category_browse_show_thumb'    => ''
+                'category_browse_option'        => '',  // idk what is this
+                'category_browse_show_thumb'    => ''   // idk what is this too
             ],
             'page'  => [
-                'thankyou',
-                'cart',
-                'lost_password'
+                'thankyou' => isset($settingsInfo->thanksUrl) ? $settingsInfo->thanksUrl : false,
+                'cart' => isset($settingsInfo->cartUrl) ? $settingsInfo->cartUrl : false,
+                'lost_password' => isset($settingsInfo->lostPasswordUrl) ? $settingsInfo->lostPasswordUrl : false,
             ],
-            'status_list'   => [
-                [
-                    'status_slug'   => 'All',
-                    'status_label'  => 'All'
-                ]
-            ],
-            'instragram_api'    => [
+            'status_list'   => $orderStatusArray,
+            'instragram_api' => [
                 'client_id' => false
             ]
         ];
@@ -794,7 +805,7 @@ class ResponseFormatter
             'display-price-during-cart-checkout'    => '',
             'orderDate' => $orderData->getCreatedAt(),
             'paymentDate'   => '',
-            'status'    => '',
+            'status'    => $orderData->getStatus(),
             'currency'  => '',
             'billing_email' => $orderData->getCustomerEmail(),
             'billing_phone' => '',      // no phone for billing?? ;(
@@ -809,11 +820,11 @@ class ResponseFormatter
             'shipping_tax'  => $orderData->getShippingTaxAmount(),
             'tax_total' => '',
             'discount_total'    => $orderData->getShippingDiscountAmount(),
-            'order_total'   => '',
+            'order_total'   => $orderData->getGrandTotal(),
             'order_note'    => $orderData->getCustomerNote(),
-            'payment_method_id' => '',
-            'payment_method_title'  => '',
-            'payment_desc'  => '',  // TODO: payment status description
+            'payment_method_id' => $orderData->getPayment()->getMethod(),
+            'payment_method_title'  => $this->paymentHelper->getPaymentTitle($orderData->getPayment()->getMethod()),
+            'payment_desc'  => $orderData->getPayment()->getAdditionalInformation(),
             'order_notes'   => ''
         ];
     }

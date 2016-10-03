@@ -13,13 +13,22 @@ class AuthorizeNetHelper
      */
     protected $authorizeNet;
 
+    /**
+     * @var \Magento\Authorizenet\Model\TransactionService
+     */
+    protected $transactionService;
+
     public function __construct(
-        \Magento\Authorizenet\Model\Authorizenet $authorizenet
+        \Magento\Authorizenet\Model\Authorizenet $authorizenet,
+        \Magento\Authorizenet\Model\TransactionService $transactionService
     ) {
         $this->authorizeNet = $authorizenet;
+        $this->transactionService = $transactionService;
     }
 
     public function getRedirectUrl($methodId) {
+        $url = $this->authorizeNet->getConfigData('cgi_url_td') ? '' : \Magento\Authorizenet\Model\TransactionService::CGI_URL_TD;
+        return $url;
     }
 
     public function getName() {

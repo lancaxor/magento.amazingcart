@@ -12,6 +12,8 @@ namespace Amazingcard\JsonApi\Controller\Index;
 
 use Amazingcard\JsonApi\Helper\Pager;
 use Amazingcard\JsonApi\Helper\PaymentHelper;
+use Amazingcard\JsonApi\Helper\Setting;
+use Amazingcard\JsonApi\Helper\Settings;
 use Amazingcard\JsonApi\Helper\UrlWorker;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
 use Amazingcard\JsonApi\Model\Catalog\Category\Factory\VarcharFactory;
@@ -122,6 +124,11 @@ class Index extends Action
      */
     protected $paymentHelper;
 
+    /**
+     * @var Settings
+     */
+    protected $settingsHelper;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -142,7 +149,8 @@ class Index extends Action
         \Amazingcard\JsonApi\Helper\Order $orderHelper,
         Pager $pagerHelper,
         PaymentHelper $paymentHelper,
-        UrlWorker $urlWorker
+        UrlWorker $urlWorker,
+        Settings $settingsHelper
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->catalogCategoryVarcharFactory = $varcharFactory;
@@ -163,6 +171,7 @@ class Index extends Action
         $this->pagerHelper = $pagerHelper;
         $this->orderHelper = $orderHelper;
         $this->paymentHelper = $paymentHelper;
+        $this->settingsHelper = $settingsHelper;
 
         parent::__construct($context);
 
@@ -541,7 +550,9 @@ class Index extends Action
      * @return array
      */
     protected function getSettings($request) {
-        return $this->responseFormatter->formatSettings();
+
+        $settings = $this->settingsHelper->getSettings();
+        return $this->responseFormatter->formatSettings($settings);
     }
 
     /**
@@ -719,6 +730,15 @@ class Index extends Action
 
     protected function getPaymentGateways() {
         return $this->paymentHelper->getPaymentGateways();
+    }
+
+    protected function ping() {
+        $request = $this->getRequest();
+        $param = $request->getParam('param', 0);
+        return [
+            'param'     => $param,
+            'status'    => 1
+        ];
     }
     #endregion
 }
