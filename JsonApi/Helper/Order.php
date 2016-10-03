@@ -187,25 +187,29 @@ class Order
                 break;
         }
 
+        /** @var CustomerInterface $customer */
+        $customer = $loginInfo['data']['customer'];
+
         $orderModel = $this->orderFactory->create();
         $orderCollection = $orderModel->getCollection();
+        $orderCollection->addFieldToFilter('customer_id', $customer->getId());
         if($currentStatus) {
             $orderCollection->addFieldToFilter('status', $currentStatus);
         }
 
-        /** @var CustomerInterface $customer */
-        $customer = $loginInfo['data']['customer'];
+        $orderList = $orderCollection->getItems();
 
-        $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter('customer_id', $customer->getId())
-            ->create();
-
-        $orderList = $this->orderRepository
-            ->getList($searchCriteria)
-            ->getItems();
+//        $searchCriteria = $this->searchCriteriaBuilder
+//            ->addFilter('customer_id', $customer->getId())
+//            ->create();
+//
+//        $orderList = $this->orderRepository
+//            ->getList($searchCriteria)
+//            ->getItems();
 
         $orderItems = [];
 
+        /** @var \Magento\Sales\Model\Order $order */
         foreach($orderList as $order) {
             $orderItems[$order->getEntityId()] = $order->getItems();
         }

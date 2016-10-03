@@ -350,4 +350,14 @@ class Quote
         $model = $this->quoteFactory->create();
 //        $model->
     }
+
+    /**
+     * @param $quoteId
+     * @return \Magento\Quote\Model\Quote
+     */
+    public function getQuoteById($quoteId) {
+        $quote = $this->quoteFactory->create();
+        $quote->getResource()->load($quote, $quoteId);
+        return $quote;
+    }
 }

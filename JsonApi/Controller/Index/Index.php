@@ -525,8 +525,11 @@ class Index extends Action
         $orderId = $request->getParam('orderID');
         $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
-        $data = $this->orderHelper->getRedirectPaymentUrl($orderId, $paymentMethodId);
-        die(var_dump($data));
+//        $data = $this->orderHelper->getRedirectPaymentUrl($orderId, $paymentMethodId);
+//        die(var_dump($data));
+
+        $url = $this->paymentHelper->getPayPalCheckoutRedirectUrl($orderId, $paymentMethodId);
+        die(var_dump($url));
         return [];
     }
 
@@ -537,10 +540,12 @@ class Index extends Action
      * @return array
      */
     protected function mobilePaymentRedirectAuthorizeDotNetApi($request) {
-        $orderKey = $request->getParam('orderKey');
+        $orderKey = $request->getParam('orderKey'); // idk what is this -_-
         $orderId = $request->getParam('orderID');
         $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
+        $url = $this->paymentHelper->getAuthorizeNetCheckoutRedirectUrl($orderId, $paymentMethodId);
+        die(var_dump($url));
         return [];
     }
 

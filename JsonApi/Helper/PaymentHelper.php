@@ -45,12 +45,19 @@ class PaymentHelper
      */
     protected $authorizeNetHelper;
 
+    /**
+     * @var \PaypalHelper
+     */
+    protected $paypalHelper;
+
     public function __construct(
 //        MethodInterface $paymentMethod,
         PaymentFactory $paymentFactory,
         \Magento\Sales\Model\ResourceModel\Order\Payment\CollectionFactory $paymentCollectionFactory,
         \Magento\Payment\Model\Config $paymentConfig,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \AuthorizeNetHelper $authorizeNetHelper,
+        \PaypalHelper $paypalHelper
     )
     {
 //        $this->paymentMethod = $paymentMethod;
@@ -58,18 +65,29 @@ class PaymentHelper
         $this->paymentCollectionFactory = $paymentCollectionFactory;
         $this->paymentConfig = $paymentConfig;
         $this->scopeConfig = $scopeConfig;
+        $this->authorizeNetHelper = $authorizeNetHelper;
+        $this->paypalHelper = $paypalHelper;
     }
 
-    public function getPaymentRedirectUrl($paymentId) {
+//    public function getPaymentRedirectUrl($paymentId) {
 
-        $payment = $this->getPaymentModelById($paymentId);
+//        $payment = $this->getPaymentModelById($paymentId);
+//
+//        $payment->getConfig();
+//        die(var_dump($paymentId, $payment->getMethod()));
+//
+//        $orderPlaceUrl = $payment->getOrderPlaceRedirectUrl();
+//        $checkoutUrl = $payment->getCheckoutRedirectUrl();
+//        return $checkoutUrl;
+//    }
 
-        $payment->getConfig();
-        die(var_dump($paymentId, $payment->getMethod()));
 
-        $orderPlaceUrl = $payment->getOrderPlaceRedirectUrl();
-        $checkoutUrl = $payment->getCheckoutRedirectUrl();
-        return $checkoutUrl;
+    public function getPayPalCheckoutRedirectUrl($orderId, $methodId) {
+        return $this->paypalHelper->getCheckoutRedirectUrl($orderId, $methodId);
+    }
+
+    public function getAuthorizeNetCheckoutRedirectUrl($orderId, $methodId) {
+        return $this->authorizeNetHelper->getCheckoutRedirectUrl($orderId, $methodId);
     }
 
     /**
