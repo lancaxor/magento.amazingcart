@@ -63,7 +63,7 @@ class Product
     public function getRecentProducts($pager, $order = 'DESC') {
 
         /** @var BaseAbstractModel $model */
-        $model = $this->getOrderedProductModel($pager, 'created_at ' . $order);
+        $model = $this->getOrderedProductModel($pager, $order);
         $productsInfo = $model->getData();
         return $productsInfo;
     }

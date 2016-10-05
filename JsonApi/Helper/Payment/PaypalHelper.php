@@ -6,6 +6,9 @@
  * Date: 03.10.16
  * Time: 17:16
  */
+
+namespace Amazingcard\JsonApi\Helper\Payment;
+
 class PaypalHelper implements \Amazingcard\JsonApi\Api\PaymentMethodInterface
 {
 
@@ -19,30 +22,23 @@ class PaypalHelper implements \Amazingcard\JsonApi\Api\PaymentMethodInterface
      */
     protected $orderFactory;
 
-    /**
-     * @var \Amazingcard\JsonApi\Helper\Quote
-     */
-    protected $quoteHelper;
-
     public function __construct(
         \Magento\Paypal\Model\Express $paypalExpress,
-        \Magento\Sales\Model\OrderFactory $orderFactory,
-        \Amazingcard\JsonApi\Helper\Quote $quoteHelper
+        \Magento\Sales\Model\OrderFactory $orderFactory
     ) {
         $this->paypalExpress = $paypalExpress;
         $this->orderFactory = $orderFactory;
-        $this->quoteHelper = $quoteHelper;
     }
 
-    public function getCheckoutRedirectUrl($orderId, $method)
+    /**
+     * @param $quote \Magento\Quote\Model\Quote
+     * @param $method
+     * @return string
+     */
+    public function getCheckoutRedirectUrl($quote, $method)
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->orderFactory->create();
-        $order->getResource()->load($order, $orderId);
-        $quoteId = $order->getQuoteId();
-        $quote = $this->quoteHelper->getQuoteById($quoteId);
         $url = $quote->getCheckoutRedirectUrl();
-        die(var_dump($url));
+        die(var_dump($quote->getId(), $url));
         return $this->paypalExpress->getCheckoutRedirectUrl();
     }
 

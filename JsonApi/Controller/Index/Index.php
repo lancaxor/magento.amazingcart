@@ -525,10 +525,20 @@ class Index extends Action
         $orderId = $request->getParam('orderID');
         $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
-//        $data = $this->orderHelper->getRedirectPaymentUrl($orderId, $paymentMethodId);
-//        die(var_dump($data));
+        $errorMessages = [];
+        if (!isset($orderId)) {
+            $errorMessages[] = 'Missing required field orderID!';
+        }
+        if (!isset($paymentMethodId)) {
+            $errorMessages[] = 'Missing required field paymentMethodID!';
+        }
 
-        $url = $this->paymentHelper->getPayPalCheckoutRedirectUrl($orderId, $paymentMethodId);
+        if ($errorMessages) {
+            return $this->responseFormatter->formatError(implode($errorMessages, '\n'), -1);
+        }
+
+        $quote = $this->orderHelper->getQuoteByOrderId($orderId);
+        $url = $this->paymentHelper->getPayPalCheckoutRedirectUrl($quote, $paymentMethodId);
         die(var_dump($url));
         return [];
     }
@@ -544,7 +554,20 @@ class Index extends Action
         $orderId = $request->getParam('orderID');
         $paymentMethodId = $request->getParam('paymentMethodID');   // payment code
 
-        $url = $this->paymentHelper->getAuthorizeNetCheckoutRedirectUrl($orderId, $paymentMethodId);
+        $errorMessage = '';
+        if (!isset($orderId)) {
+            $errorMessage .= 'Missing required field orderID!\n';
+        }
+        if (!isset($paymentMethodId)) {
+            $errorMessage .= 'Missing required field paymentMethodID';
+        }
+
+        if ($errorMessage) {
+            return $this->responseFormatter->formatError($errorMessage, -1);
+        }
+
+        $quote = $this->orderHelper->getQuoteByOrderId($orderId);
+        $url = $this->paymentHelper->getAuthorizeNetCheckoutRedirectUrl($quote, $paymentMethodId);
         die(var_dump($url));
         return [];
     }

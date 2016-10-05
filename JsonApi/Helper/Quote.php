@@ -358,6 +358,7 @@ class Quote
     public function getQuoteById($quoteId) {
         $quote = $this->quoteFactory->create();
         $quote->getResource()->load($quote, $quoteId);
+        die(var_dump($quoteId, $quote->getCustomer()->getEmail()));
         return $quote;
     }
 }

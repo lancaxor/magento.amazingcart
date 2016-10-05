@@ -92,7 +92,7 @@ class Order
     /**
      * @var \Amazingcard\JsonApi\Helper\PaymentHelper
      */
-    protected $paymentHelper;
+//    protected $paymentHelper;
 
     /**
      * @var Quote
@@ -118,7 +118,7 @@ class Order
         AddressRepositoryInterface $customerAddressRepository,
         OrderPaymentRepositoryInterface $orderPaymentRepository,
         PaymentFactory $quotePaymentFactory,
-        PaymentHelper $paymentHelper,
+//        PaymentHelper $paymentHelper,
         Quote $quoteHelper
     ) {
         $this->userHelper = $userHelper;
@@ -134,7 +134,7 @@ class Order
         $this->customerAddress = $customerAddressRepository;
         $this->orderPaymentRepository = $orderPaymentRepository;
         $this->quotePaymentFactory = $quotePaymentFactory;
-        $this->paymentHelper = $paymentHelper;
+//        $this->paymentHelper = $paymentHelper;
         $this->quoteHelper = $quoteHelper;
     }
 
@@ -327,132 +327,6 @@ class Order
             ]
         ];
     }
-    /**
-     * @TODO: test it
-     * @param $login
-     * @param $password
-     * @param $orderData array [
-     *       productJson
-     *       couponCodeJson
-     *       paymentMethodId
-     *       orderNotes
-     * ]
-     * @return array
-     */
-//    public function placeOrder___BAK($login, $password, $orderData) {
-//
-//        $loginData = $this->userHelper->login($login, $password);
-//        if(isset($loginData['error'])) {
-//
-//            return [
-//                'error'     => 1,
-//                'reason'    => 'Not Authorized'
-//            ];
-//        }
-//
-//        /** @var CustomerInterface $customer */
-//        $customer = $loginData['data']['customer'];
-//
-//        if(!isset($orderData['productJson'])) {
-//            return [
-//                'error' => 1,
-//                'reason'    => 'Missing required parameter productIDJson!'
-//            ];
-//        }
-//
-//        $stripProductId = stripslashes($orderData['productJson']);
-//        $productIds = json_decode($stripProductId);
-//
-//        $newCart = $this->quoteManagement->createEmptyCart();
-//        $quoteModel = $this->quoteFactory->create();
-////        $quoteModel->setCustomer($customer);      // deprecated? see comment to setCustomer
-//        $quoteModel->setCurrency();
-//        $quoteModel->assignCustomer($customer); // assign the quote to customer
-//
-//
-//        foreach($productIds as $id => $quantity) {
-//            $product = $this->productRepository->getById($id);
-//            try {
-//                $quoteModel->addProduct($product, intval($quantity));
-//            } catch(LocalizedException $exception) {
-//
-//            }
-//        }
-//
-//        $shippingAddressId = $customer->getDefaultShipping();
-//        $customerShippingAddress = $this->customerAddress->getById($shippingAddressId);
-//
-//        /** @var \Magento\Quote\Model\Quote\Address $quoteAddressModel */
-//        $quoteAddressModel = $this->quoteAddressFactory->create();
-//        $quoteAddressModel->importCustomerAddressData($customerShippingAddress);
-//        $quoteAddressModel->setQuote($quoteModel)
-////            ->setShippingMethod('Free')
-//            ->setShippingMethod('flatrate_flatrate')
-//            ->setCollectShippingRates(true);
-//
-//        $quoteModel->setShippingAddress($quoteAddressModel);
-//
-//        if (isset($orderData['couponCodeJson'])) {
-//            $stripCouponCode = stripslashes($orderData['couponCodeJson']);
-//            $couponCodes = json_decode($stripCouponCode);
-//
-//            if (!empty($couponCodes)) {
-//                $quoteModel->setCouponCode(is_array($couponCodes) ? current($couponCodes) : $quoteModel);
-//            }
-//        }
-//
-//        if(isset($orderData['paymentMethodId'])) {
-//
-//            /** @var PaymentHelper $paymentModel */
-//            $paymentModel = $this->quotePaymentFactory->create();
-//            $paymentModel->getResource()
-//                ->load($paymentModel, $orderData['paymentMethodId']);
-//            $paymentModel->setQuote($quoteModel);
-//            $quoteModel->setPayment($paymentModel);
-//            $quoteModel->getPayment()->setMethod($paymentModel->getMethod());   // damn......
-//
-//        } else {
-//            return [
-//                'error' => 2,
-//                'reason'    => 'Missing required parameter paymentMethodID!'
-//            ];
-//        }
-//
-//        $quoteModel->collectTotals();
-//
-//        try {
-//            $this->quoteManagement->placeOrder($newCart, $paymentModel);
-//            $submittedOrder = $this->quoteManagement->submit($quoteModel);
-//
-//        } catch(LocalizedException $exception) {
-//            return [
-//                'error'     => 1,
-//                'reason'    => $exception->getMessage()
-//            ];
-//        }
-//
-//        return [
-//            'status'    => 0,
-//            'reason'    => 'OK',
-//            'data'      => [
-//                'order' => $submittedOrder,
-//                'customer'  => $customer,
-//                'payment'   => isset($paymentModel) ? $paymentModel : null
-//            ]
-//        ];
-//    }
-
-    /**
-     * @param $orderId
-     * @param $paymentMethodId
-     * @return string
-     */
-    public function getRedirectPaymentUrl($orderId, $paymentMethodId) {
-
-
-        // TODO: some operations with orders
-        return $this->paymentHelper->getPaymentRedirectUrl($paymentMethodId);
-    }
 
     public function getStatusList() {
 
@@ -460,5 +334,20 @@ class Order
         $model = $this->orderStatusFactory->create();
         $data = $model->getCollection()->getData();
         return $data;
+    }
+
+    /**
+     * @param $orderId
+     * @return \Magento\Quote\Model\Quote
+     */
+    public function getQuoteByOrderId($orderId) {
+
+        /** @var \Magento\Sales\Model\Order $order */
+        $order = $this->orderFactory->create();
+        $order->getResource()
+            ->load($order, $orderId);
+        $quoteId = $order->getQuoteId();
+        $quote = $this->quoteHelper->getQuoteById($quoteId);
+        return $quote;
     }
 }
