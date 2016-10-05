@@ -80,8 +80,8 @@ class Product extends AbstractModel
     {
 
         /**
- * @var \Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Product $resource 
-*/
+         * @var \Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Product $resource
+        */
         $resource = $this->_getResource();
 
         if($limit || $offset) {
@@ -99,5 +99,18 @@ class Product extends AbstractModel
             ->setFetchType(BaseAbstractResourceModel::FETCH_ALL)
             ->getList($this, 'category_id', $categoryId);
         return $this->getData();
+    }
+
+    public function getCategoryByProduct($productId) {
+        $resource = $this->_geResource();
+        /** @var \Amazingcard\JsonApi\Model\Catalog\Category\ResourceModel\Product $resource */
+        $resource = $this->_getResource();
+        $resource->setColumns(
+            [
+                'product_id'    => 'product_id',
+                'category_id'   => 'category_id'
+            ]
+        );
+//            -> addCategoryEntityInfo($this->categoryEntityFactory->create())
     }
 }

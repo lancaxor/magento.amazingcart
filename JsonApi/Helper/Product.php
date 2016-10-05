@@ -20,13 +20,23 @@ class Product
     protected $productCollectionFactory;
     protected $entityFactory;
 
+    protected $coreCategoryFactory;
+    protected $categoryProductFactory;
+    protected $categoryCollectionFactory;
+
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
-        \Amazingcard\JsonApi\Model\Catalog\Product\Factory\EntityFactory $entityFactory
+        \Amazingcard\JsonApi\Model\Catalog\Product\Factory\EntityFactory $entityFactory,
+        \Magento\Catalog\Model\CategoryFactory $categoryFactory,
+        \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
+        \Magento\Catalog\Model\ProductFactory $categoryProductFactory
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->entityFactory = $entityFactory;
+        $this->coreCategoryFactory = $categoryFactory;
+        $this->categoryCollectionFactory = $categoryCollectionFactory;
+        $this->categoryProductFactory = $categoryProductFactory;
     }
 
     /**
@@ -65,6 +75,8 @@ class Product
         /** @var BaseAbstractModel $model */
         $model = $this->getOrderedProductModel($pager, $order);
         $productsInfo = $model->getData();
+        $productIds = array_column($productsInfo, 'entity_id');
+        $categories = $this->getCategoriesByProductIds($productIds);
         return $productsInfo;
     }
 
@@ -88,5 +100,39 @@ class Product
         }
         $resource->load($model);
         return $model;
+    }
+
+    /**
+     * @param $productIds array
+     * @return  \Magento\Catalog\Model\ResourceModel\Category\Collection
+     */
+    public function getCategoriesByProductIds($productIds) {
+
+        $categoryProduct = $this->categoryProductFactory->create();
+        $categoryProduct->getCollection()
+            ->removeAllFieldsFromSelect()
+            ->addFieldToSelect('product_id')
+            ->addFieldToSelect('category_id')
+            ->addFilterToSelect('product_id', $productIds);
+
+        $categoryModel = $this->coreCategoryFactory->create();
+        $categories1 = $categoryModel->getCollection()
+            ->addFieldToFilter('product_id', $productIds)
+            ->addFieldToSelect('*');
+
+        $categoryCollection = $this->categoryCollectionFactory->create()
+            ->addFieldToFilter('product_id', $productIds)
+            ->addFieldToSelect('*')
+            ->load();
+
+        $categories = $categoryCollection->getItems();
+        var_dump('stage1: ', $categories);
+
+        /** @var \Magento\Catalog\Model\Category $category */
+        foreach($categories1 as $category) {
+            var_dump($category->getName());
+        }
+        die('damnit');
+        return $categories;
     }
 }

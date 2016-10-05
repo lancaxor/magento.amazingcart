@@ -49,6 +49,7 @@ class Entity extends BaseAbstractModel
             ]
         )->setFetchType(BaseAbstractResourceModel::FETCH_ROW);
         $resource->load($this, $productId, 'entity_id');
+
         return $this->getData();
     }
 

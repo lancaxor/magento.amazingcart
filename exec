@@ -1,0 +1,13 @@
+echo 'Adding...'
+git add --all
+echo 'Committing...'
+git commit -am "$1"
+echo 'switch to product branch'
+git checkout product
+echo 'merging...'
+git merge master --commit
+echo 'pushing to remote repository...'
+git push --all
+echo 'switching back to product branch'
+git checkout master
+echo 'done! Run "git pull --commit" on your server.'

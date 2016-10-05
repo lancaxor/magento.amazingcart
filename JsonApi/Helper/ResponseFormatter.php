@@ -164,10 +164,14 @@ class ResponseFormatter
      * Get product categories (always your, captain)
      * @param $categoryList
      * @param $parent int Root category ID
+     * @param $treeView boolean true for output category with subcategories
      * @return array
      */
-    public function formatProductCategories($categoryList, $parent = 0) {
-        return $this->buildProductCategoriesTree($categoryList, $parent);
+    public function formatProductCategories($categoryList, $parent = 0, $treeView = true) {
+        if ($treeView) {
+            return $this->buildProductCategoriesTree($categoryList, $parent);
+        }
+
     }
 
     /**
@@ -909,6 +913,16 @@ class ResponseFormatter
             $result[] = $this->formatSinglePaymentMethod($payment);
         }
         return $result;
+    }
+
+    /**
+     * @param $category \
+     * @return array
+     */
+    protected function formatSingleProductCategory($category) {
+        return [
+
+        ];
     }
 
     //endregion

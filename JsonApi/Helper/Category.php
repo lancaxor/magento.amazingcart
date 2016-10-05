@@ -11,14 +11,25 @@ namespace Amazingcard\JsonApi\Helper;
 
 class Category
 {
-    /**
-     * @var  \Amazingcard\JsonApi\Model\Catalog\Category\EntityFac
-     */
-    protected $_catalogCategoryEntityFactory;
+    protected $categoryFactory;
 
     public function __construct(
-        //EntityFactory
+        \Magento\Catalog\Model\CategoryFactory $categoryFactory
     ) {
+        $this->categoryFactory = $categoryFactory;
+    }
 
+    public function getCategoriesByProductIds($productIds) {
+        $categoryModel = $this->categoryFactory->create();
+        $categories = $categoryModel->getCollection()
+            ->addFieldToFilter('product_id', $productIds)
+            ->addFieldToSelect('*');
+
+        /** @var \Magento\Catalog\Model\Category $category */
+        foreach($categories as $category) {
+            var_dump($category->getName());
+        }
+        die('damnit');
+        return $categories;
     }
 }
