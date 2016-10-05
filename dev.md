@@ -30,6 +30,14 @@ If no branch 'product' exists on current machine, add flag -b:
 
 `git push --all`
 
+### Alternative way
+
+Switch to master branch (if is not there). Im module root run exec:
+
+`./exec "<commit message is here>"
+
+It is faster, isn't it? ^.^
+
 ##On server
 
 *SSH is really cool thing, so we'll use it.*
