@@ -48,7 +48,7 @@ class ResponseFormatter
             return [];
         }
         return [
-            'product_ID'    => $productInfo['entity_id'],      // product_entity.product_id
+            'product_ID'    => intval($productInfo['entity_id']),      // product_entity.product_id
             'is_downloadable'   => isset($productInfo['is_downloadable']) ? $productInfo['is_downloadable'] : false,
             'is_purchasable'    => true,
             'is_featured'       => isset($productInfo['is_featured']) ? $productInfo['is_featured'] : false,
@@ -61,7 +61,7 @@ class ResponseFormatter
                     'excepts'       => ''
                 ],
                 'SKU'           => isset($productInfo['sku']) ? $productInfo['sku'] : '',
-                'product_type'  => isset($productInfo['type_id']) ? $productInfo['type_id'] : null,    // product_entity.type_id
+                'product_type'  => isset($productInfo['type_id']) ? intval($productInfo['type_id']) : null,    // product_entity.type_id
                 'if_external'   => [    // idk what is it
                     'product_url'   => '',
                     'button_name'   => ''
@@ -764,7 +764,7 @@ class ResponseFormatter
             'total_page'    => $pager->getTotalPages(),
             'post_per_page' => $pager->getPageSize(),
             'total_post'    => $pager->getTotalItems(),
-            'products'      => $products
+            'products'      => intval($products)
         ];
     }
 
