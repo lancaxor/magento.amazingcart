@@ -763,8 +763,8 @@ class ResponseFormatter
             'current_page'  => $pager->getCurrentPage(),
             'total_page'    => $pager->getTotalPages(),
             'post_per_page' => $pager->getPageSize(),
-            'total_post'    => $pager->getTotalItems(),
-            'products'      => intval($products)
+            'total_post'    => intval($pager->getTotalItems()),
+            'products'      => $products
         ];
     }
 
