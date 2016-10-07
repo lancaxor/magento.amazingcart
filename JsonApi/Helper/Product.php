@@ -98,9 +98,12 @@ class Product
      */
     public function getRandomProducts($pager, $order = 'DESC') {
 
-        /** @var BaseAbstractModel $model */
-        $model = $this->getOrderedProductModel($pager, 'rand');
-        $productsInfo = $model->getData();
+        $data = $this->getOrderedProductModel($pager, 'rand');
+
+        $productsInfo = [
+            'data'  => $data['model']->getData(),
+            'count' => $data['count']
+        ];
 
         $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
         return $productsInfo;
@@ -113,9 +116,11 @@ class Product
      */
     public function getRecentProducts($pager, $order = 'DESC') {
 
-        /** @var BaseAbstractModel $model */
-        $model = $this->getOrderedProductModel($pager, $order);
-        $productsInfo = $model->getData();
+        $data = $this->getOrderedProductModel($pager, $order);
+        $productsInfo = [
+            'data'  => $data['model']->getData(),
+            'count' => $data['count']
+        ];
 
         $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
         return $productsInfo;
@@ -126,7 +131,6 @@ class Product
      * @return array
      */
     public function getProductsCategories($products) {
-//        $products = $productsInfo['data'];
         $productIds = array_column($products, 'entity_id');
 
         // for optimisation, just 1 query
@@ -150,23 +154,25 @@ class Product
     /**
      * @param $pager    Pager
      * @param $order    string
-     * @return BaseAbstractModel
+     * @return array
      */
     protected function getOrderedProductModel($pager, $order) {
 
-        $model = $this->entityFactory->getObject();
+        // I become love Magento because of these collections ^.^
+        $productCollection = $this->productCollectionFactory->create();
 
-        /** @var BaseAbstractResourceModel $resource */
-        $resource = $model->getResource();
-        $resource->setLimitOffset($pager->getLimit(), $pager->getOffset())
-            ->setWithCount(true);
         if($order == 'rand') {
-            $resource->setRandOrder();
+            $productCollection->getSelect()->orderRand();
         } else {
-            $resource->setOrder('created_at ' . $order);
+            $productCollection->getSelect()->order('created_at ' . $order);
         }
-        $resource->load($model);
-        return $model;
+
+        $productsCount = $productCollection->count();
+        $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
+        return [
+            'model' => $productCollection,
+            'count' => $productsCount
+        ];
     }
 
     /**
@@ -178,7 +184,8 @@ class Product
         $categoryCollection = $this->categoryCollectionFactory->create();
 
         // hack, because there will be many rows with the same entity_id
-        // but different product_id. Need this for optimization.
+        // but different product_id. Need this for optimization
+        // (get all categories of all specified products using single query).
         $categoryCollection->getSelect()->reset('columns')->columns([
             'entity_id as category_id',
             'attribute_set_id',

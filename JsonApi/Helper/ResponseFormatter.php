@@ -49,7 +49,9 @@ class ResponseFormatter
         if(empty($productInfo)) {
             return [];
         }
+
         return [
+            'created_at'    => $productInfo['created_at'],
             'product_ID'    => intval($productInfo['entity_id']),      // product_entity.product_id
             'is_downloadable'   => isset($productInfo['is_downloadable']) ? $productInfo['is_downloadable'] : false,
             'is_purchasable'    => true,
