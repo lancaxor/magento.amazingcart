@@ -41,9 +41,10 @@ class ResponseFormatter
     }
     /**
      * @param $productInfo
+     * @param $categories array
      * @return array
      */
-    public function formatProductById($productInfo) {
+    public function formatProductById($productInfo, $categories = []) {
         if(empty($productInfo)) {
             return [];
         }
@@ -156,7 +157,7 @@ class ResponseFormatter
                 'featured_images'   => '0',
                 'other_images'      => []
             ],
-            'categories'    => isset($productInfo['category']) ? $this->formatProductCategories($productInfo['category']) : []
+            'categories'    => isset($categories[$productInfo['entity_id']]) ?  $this->formatProductCategories($categories[$productInfo['entity_id']], 0, false) : []
         ];
     }
 
@@ -172,6 +173,12 @@ class ResponseFormatter
             return $this->buildProductCategoriesTree($categoryList, $parent);
         }
 
+        $result = [];
+        foreach ($categoryList as $category) {
+
+            $result[] = $this->formatSingleProductCategory($category);
+        }
+        return $result;
     }
 
     /**
@@ -590,7 +597,7 @@ class ResponseFormatter
      */
     public function formatRecentProducts($productInfo, $pager) {
 
-        $data = $this->formatPagedProducts($pager, $productInfo['data']);
+        $data = $this->formatPagedProducts($pager, $productInfo['data'], $productInfo['categories']);
         return $data;
     }
 
@@ -755,12 +762,13 @@ class ResponseFormatter
      * Format pager and products
      * @param $pager    Pager
      * @param $productsInfo array
+     * @param $categories array
      * @return array
      */
-    protected function formatPagedProducts($pager, $productsInfo) {
+    protected function formatPagedProducts($pager, $productsInfo, $categories = []) {
         $products = [];
         foreach($productsInfo as $product) {
-            $products[] = $this->formatProductById($product);
+            $products[] = $this->formatProductById($product, $categories);
         }
 
         return [
@@ -916,12 +924,21 @@ class ResponseFormatter
     }
 
     /**
-     * @param $category \
+     * @param $category \Magento\Catalog\Model\Category
      * @return array
      */
     protected function formatSingleProductCategory($category) {
         return [
-
+            'term_id' => $category->getId(),
+            'name' => $category->getName(),
+            'slug' => $category->getData('slug'),
+            'term_group' => 0,
+            'term_taxonomy_id' => $category->getId(),
+            'taxonomy' => 'product_cat',
+            'description' => $category->getData('name'),
+            'parent' => $category->getParentIds(),
+            'count' => $category->getProductCount(),
+            'filter' => 'raw',
         ];
     }
 

@@ -37,6 +37,7 @@ class Entity extends BaseAbstractResourceModel
      * DAAAAAMN >.<
      * Add product count
      * STUPID MODELS ARCHITECTURE >.<
+     * // added after ~4 weeks: and stupid me -_-
      * @param $categoryProductModel \Amazingcard\JsonApi\Model\Catalog\Category\Product
      * @return $this
      */

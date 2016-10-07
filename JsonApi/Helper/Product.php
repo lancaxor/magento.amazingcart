@@ -11,25 +11,56 @@ namespace Amazingcard\JsonApi\Helper;
 
 use Amazingcard\JsonApi\Model\Base\BaseAbstractModel;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
+use Magento\Catalog\Model\Category;
 
 class Product
 {
+
+    const ATTR_CATEGORY_NAME = 45,
+        ATTR_CATEGORY_SLUG = 117;
+
     /**
      * @var \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory
      */
     protected $productCollectionFactory;
+
+    /**
+     * @var \Amazingcard\JsonApi\Model\Catalog\Product\Factory\EntityFactory
+     */
     protected $entityFactory;
 
+    /**
+     * @var \Magento\Catalog\Model\CategoryFactory
+     */
     protected $coreCategoryFactory;
+
+    /**
+     * @var \Magento\Catalog\Model\ProductFactory
+     */
     protected $categoryProductFactory;
+
+    /**
+     * @var \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory
+     */
     protected $categoryCollectionFactory;
+
+    /**
+     * @var \Magento\Catalog\Model\ResourceModel\CategoryProduct
+     */
+    protected $categoryProductModel;
+
+    /**
+     * @var \Magento\Catalog\Model\ResourceModel\Collection\
+     */
+    protected $categoryProductCollection;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
         \Amazingcard\JsonApi\Model\Catalog\Product\Factory\EntityFactory $entityFactory,
         \Magento\Catalog\Model\CategoryFactory $categoryFactory,
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
-        \Magento\Catalog\Model\ProductFactory $categoryProductFactory
+        \Magento\Catalog\Model\ProductFactory $categoryProductFactory,
+        \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -37,6 +68,7 @@ class Product
         $this->coreCategoryFactory = $categoryFactory;
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->categoryProductFactory = $categoryProductFactory;
+        $this->categoryProductModel = $categoryProductModel;
     }
 
     /**
@@ -75,8 +107,26 @@ class Product
         /** @var BaseAbstractModel $model */
         $model = $this->getOrderedProductModel($pager, $order);
         $productsInfo = $model->getData();
-        $productIds = array_column($productsInfo, 'entity_id');
-        $categories = $this->getCategoriesByProductIds($productIds);
+        $products = $productsInfo['data'];
+        $productIds = array_column($products, 'entity_id');
+
+        // for optimisation, just 1 query
+        $categoryCollection = $this->getCategoriesByProductIds($productIds);
+        $categories = $categoryCollection->getItems();
+        $result = [];
+        foreach($productIds as $productId) {
+
+            /** @var Category $category */
+            foreach($categories as $category) {
+                if ($category->getData('product_id') == $productId) {
+
+                    // need to set entity_id back for $category->getId() properly work
+                    $result[$productId][] = $category->setEntityId($category->getData('category_id'));
+                }
+            }
+        }
+
+        $productsInfo['categories'] = $result;
         return $productsInfo;
     }
 
@@ -104,35 +154,54 @@ class Product
 
     /**
      * @param $productIds array
-     * @return  \Magento\Catalog\Model\ResourceModel\Category\Collection
+     * @return  \Magento\Catalog\Model\ResourceModel\Category\Collection | array
      */
     public function getCategoriesByProductIds($productIds) {
 
-        $categoryProduct = $this->categoryProductFactory->create();
-        $categoryProduct->getCollection()
-            ->removeAllFieldsFromSelect()
-            ->addFieldToSelect('product_id')
-            ->addFieldToSelect('category_id')
-            ->addFilterToSelect('product_id', $productIds);
+        $categoryCollection = $this->categoryCollectionFactory->create();
 
-        $categoryModel = $this->coreCategoryFactory->create();
-        $categories1 = $categoryModel->getCollection()
-            ->addFieldToFilter('product_id', $productIds)
-            ->addFieldToSelect('*');
-
-        $categoryCollection = $this->categoryCollectionFactory->create()
-            ->addFieldToFilter('product_id', $productIds)
-            ->addFieldToSelect('*')
-            ->load();
-
-        $categories = $categoryCollection->getItems();
-        var_dump('stage1: ', $categories);
-
-        /** @var \Magento\Catalog\Model\Category $category */
-        foreach($categories1 as $category) {
-            var_dump($category->getName());
+        // hack, because there will be many rows with the same entity_id
+        // but different product_id. Need this for optimization.
+        $categoryCollection->getSelect()->reset('columns')->columns([
+            'entity_id as category_id',
+            'attribute_set_id',
+            'parent_id',
+            'created_at',
+            'updated_at',
+            'path',
+            'position',
+            'level',
+            'children_count'
+        ]);
+        $categoryCollection->removeAttributeToSelect('entity_id');
+        if ($productIds) {
+            $categoryCollection->joinField(
+                'product_id',
+                'catalog_category_product',
+                'product_id',
+                'category_id=entity_id',
+                ['product_id' => $productIds]
+            );
         }
-        die('damnit');
-        return $categories;
+
+        $categoryCollection
+            ->addFieldToSelect('entity_id', 'category_id')
+            ->removeFieldFromSelect('entity_id')
+            ->joinField(
+                'name',
+                'catalog_category_entity_varchar',
+                'value',
+                'entity_id = entity_id',
+                ['attribute_id' => self::ATTR_CATEGORY_NAME]
+            )->joinField(
+                'slug',
+                'catalog_category_entity_varchar',
+                'value',
+                'entity_id = entity_id',
+                ['attribute_id' => self::ATTR_CATEGORY_SLUG],
+                'left'
+            );
+
+        return $categoryCollection;
     }
 }
