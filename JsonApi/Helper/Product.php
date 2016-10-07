@@ -198,8 +198,7 @@ class Product
                 'catalog_category_entity_varchar',
                 'value',
                 'entity_id = entity_id',
-                ['attribute_id' => self::ATTR_CATEGORY_SLUG],
-                'left'
+                ['attribute_id' => self::ATTR_CATEGORY_SLUG]
             );
 
         return $categoryCollection;
