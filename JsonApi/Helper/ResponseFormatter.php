@@ -45,6 +45,7 @@ class ResponseFormatter
      * @return array
      */
     public function formatProductById($productInfo, $categories = []) {
+
         if(empty($productInfo)) {
             return [];
         }
@@ -607,7 +608,7 @@ class ResponseFormatter
      * @return array
      */
     public function formatRandomProducts($productsInfo, $pager) {
-        $data = $this->formatPagedProducts($pager, $productsInfo['data']);
+        $data = $this->formatPagedProducts($pager, $productsInfo['data'], $productsInfo['categories']);
         return $data;
     }
 
@@ -617,11 +618,14 @@ class ResponseFormatter
      */
     public function formatFeaturedProduct($featuredProductInfo) {
 
-        $productCount = count($featuredProductInfo);
+        $productsList = $featuredProductInfo['data'];
+        $productsCategories = $featuredProductInfo['categories'];
+
+        $productCount = count($productsList);
         $products = [];
 
-        foreach($featuredProductInfo as $_ => $product) {
-            $products[] = $this->formatProductById($product);
+        foreach($productsList as $_ => $product) {
+            $products[] = $this->formatProductById($product, $productsCategories);
         }
         return [
             'total_post' => $productCount,

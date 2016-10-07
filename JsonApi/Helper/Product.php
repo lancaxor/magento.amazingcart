@@ -76,11 +76,18 @@ class Product
      * @return array
      */
     public function getFeaturedProducts() {
-        return $this->productCollectionFactory->create()
+
+        $featuredProducts = $this->productCollectionFactory->create()
             ->addAttributeToFilter('is_featured', 1)
             ->addAttributeToSelect('*')
-            ->load(true)
+            ->load()
             ->getData();
+
+        $productsInfo = [
+            'data'  => $featuredProducts
+        ];
+        $productsInfo['categories'] = $this->getProductsCategories($featuredProducts);
+        return $productsInfo;
     }
 
     /**
@@ -94,6 +101,8 @@ class Product
         /** @var BaseAbstractModel $model */
         $model = $this->getOrderedProductModel($pager, 'rand');
         $productsInfo = $model->getData();
+
+        $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
         return $productsInfo;
     }
 
@@ -107,7 +116,17 @@ class Product
         /** @var BaseAbstractModel $model */
         $model = $this->getOrderedProductModel($pager, $order);
         $productsInfo = $model->getData();
-        $products = $productsInfo['data'];
+
+        $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
+        return $productsInfo;
+    }
+
+    /**
+     * @param $products
+     * @return array
+     */
+    public function getProductsCategories($products) {
+//        $products = $productsInfo['data'];
         $productIds = array_column($products, 'entity_id');
 
         // for optimisation, just 1 query
@@ -125,9 +144,7 @@ class Product
                 }
             }
         }
-
-        $productsInfo['categories'] = $result;
-        return $productsInfo;
+        return $result;
     }
 
     /**
