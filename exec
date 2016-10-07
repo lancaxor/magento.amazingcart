@@ -6,16 +6,16 @@ echo 'Usage: exec "<commit message>"'
 exit
 fi
 
-echo 'Adding...'
+echo '  => Adding...'
 git add --all
-echo 'Committing...'
+echo '  => Committing...'
 git commit -am "$1"
-echo 'switch to product branch'
+echo '  => switch to product branch'
 git checkout product
-echo 'merging...'
+echo '  => merging...'
 git merge master --commit
-echo 'pushing to remote repository...'
+echo '  => pushing to remote repository...'
 git push --all
-echo 'switching back to product branch'
+echo '  => switching back to product branch'
 git checkout master
-echo 'done! Run "git pull --commit" on your server.'
+echo '  => done! Run "git pull --commit" on your server.'
