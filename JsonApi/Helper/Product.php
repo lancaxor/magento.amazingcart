@@ -11,7 +11,7 @@ namespace Amazingcard\JsonApi\Helper;
 
 use Amazingcard\JsonApi\Model\Base\BaseAbstractModel;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
-use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product\ImageFactory;
 
 class Product
 {
@@ -54,13 +54,19 @@ class Product
      */
     protected $categoryProductCollection;
 
+    /**
+     * @var ImageFactory
+     */
+    protected $imageFactory;
+
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
         \Amazingcard\JsonApi\Model\Catalog\Product\Factory\EntityFactory $entityFactory,
         \Magento\Catalog\Model\CategoryFactory $categoryFactory,
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
         \Magento\Catalog\Model\ProductFactory $categoryProductFactory,
-        \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel
+        \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel,
+        \Magento\Catalog\Model\Product\ImageFactory $imageFactory
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -69,6 +75,7 @@ class Product
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->categoryProductFactory = $categoryProductFactory;
         $this->categoryProductModel = $categoryProductModel;
+        $this->imageFactory = $imageFactory;
     }
 
     /**
@@ -167,8 +174,18 @@ class Product
             $productCollection->getSelect()->order('created_at ' . $order);
         }
 
+        $productCollection->addAttributeToSelect('image');
+
         $productsCount = $productCollection->count();
         $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
+        die(var_dump($this->imageFactory->create()->getResourceName()));
+
+        $imageData = $this->imageFactory->create()
+            ->getCollection()
+            ->getData();
+
+
+        die(var_dump($imageData));
         return [
             'model' => $productCollection,
             'count' => $productsCount
