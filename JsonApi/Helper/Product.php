@@ -31,22 +31,17 @@ class Product
     /**
      * @var \Magento\Catalog\Model\CategoryFactory
      */
-    protected $coreCategoryFactory;
+    protected $categoryFactory;
 
     /**
      * @var \Magento\Catalog\Model\ProductFactory
      */
-    protected $categoryProductFactory;
+    protected $productFactory;
 
     /**
      * @var \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory
      */
     protected $categoryCollectionFactory;
-
-    /**
-     * @var \Magento\Catalog\Model\ResourceModel\CategoryProduct
-     */
-    protected $categoryProductModel;
 
     /**
      * @var \Magento\Catalog\Model\ResourceModel\Collection\
@@ -67,16 +62,15 @@ class Product
         \Magento\Catalog\Model\CategoryFactory $categoryFactory,
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
         \Magento\Catalog\Model\ProductFactory $categoryProductFactory,
-        \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel,
+        \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel,     // TODO: remove
         \Magento\Catalog\Helper\ImageFactory $imageFactory
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->entityFactory = $entityFactory;
-        $this->coreCategoryFactory = $categoryFactory;
+        $this->categoryFactory = $categoryFactory;
         $this->categoryCollectionFactory = $categoryCollectionFactory;
-        $this->categoryProductFactory = $categoryProductFactory;
-        $this->categoryProductModel = $categoryProductModel;
+        $this->productFactory = $categoryProductFactory;
         $this->imageFactoryHelper = $imageFactory;
     }
 
@@ -195,7 +189,7 @@ class Product
         if (isset($pager)) {
             $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
         }
-        $productModel = $this->categoryProductFactory->create();
+        $productModel = $this->productFactory->create();
 
         /** @var \Magento\Catalog\Model\Product $product */
         foreach ($productCollection as &$product) {
@@ -268,5 +262,17 @@ class Product
             );
 
         return $categoryCollection;
+    }
+
+    public function getSingleProduct($productId) {
+        $product = $this->productFactory->create();
+        $product->getResource()->load($product, $productId);
+
+        $product->setData('is_salable', $product->getIsSalable());
+        $product->setData('image_url', $this->imageFactoryHelper->create()->init($product, $this->baseImageId)->getUrl());
+        $product->setData('product_url', $product->getProductUrl());
+        $product->setData('is_visible', $product->isVisibleInCatalog());
+//        die(var_dump($product->getData()));
+        return $product;
     }
 }

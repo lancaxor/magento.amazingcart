@@ -277,7 +277,8 @@ class Index extends Action
     protected function singleProduct($request)
     {
         $productId = $request->getParam('id', 0);
-        $product = $this->productEntityFactory->getObject()->getProductById($productId);
+//        $product = $this->productEntityFactory->getObject()->getProductById($productId);
+        $product = $this->productHelper->getSingleProduct($productId);
         return $this->responseFormatter->formatProductById($product);
     }
 
