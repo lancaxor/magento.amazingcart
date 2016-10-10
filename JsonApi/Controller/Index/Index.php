@@ -606,7 +606,7 @@ class Index extends Action
      * @param $request \Magento\Framework\App\RequestInterface
      * @return array
      */
-    protected function getFeaturedProducts($request) {
+    protected function getFeaturedProduct($request) {
 
         $data = $this->productHelper->getFeaturedProducts();
         return $this->responseFormatter->formatFeaturedProduct($data);
