@@ -871,9 +871,10 @@ class ResponseFormatter
                     'button_name'   => $productData['sku']
                 ],
                 'pricing'   => [
-                    'is_on_sale'    => isset($productData['is_salable']) ? $productData['is_salable'] : false,
+                    'is_on_sale'    => isset($productData['is_on_sale']) ? $productData['is_on_sale'] : false,
                     'currency'      => '$',
                     'regular_price' => isset($productData['final_price']) ? $productData['final_price'] : '',
+                    'sale_price'    => isset($productData['sale_price']) ? $productData['sale_price'] : '',
                     'sale_start'    => [
                         'unixtime'      => '',
                         'day'           => false,
@@ -971,6 +972,13 @@ class ResponseFormatter
         $data = $this->formatSingleProductData($product->getData());
         $data['quantity'] = $product->getQty();
         $data['stock_status'] = $product->isInStock();
+
+//        die(var_dump($product->getPrice(), $product->getFinalPrice()));
+        if ($product->getPrice() > $product->getFinalPrice()) {
+            $data['is_on_sale'] = true;
+            $data['sale_price'] = $product->getFinalPrice();
+            $data['final_price'] = $product->getPrice();
+        }
         return $data;
     }
 
