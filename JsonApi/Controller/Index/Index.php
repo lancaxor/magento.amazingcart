@@ -286,7 +286,11 @@ class Index extends Action
             ];
         }
         $productInfo = $this->productHelper->getSingleProduct($productId);
-        return $this->responseFormatter->formatProductById($productInfo['product'], $productInfo['categories']);
+        $data = [
+            $this->responseFormatter->formatProductById($productInfo['product'], $productInfo['categories'])
+        ];
+//        die(var_dump($data));
+        return $data;
     }
 
     /**
