@@ -49,14 +49,12 @@ class ResponseFormatter
         if(empty($productInfo)) {
             return [];
         }
-
-//        die(var_dump(gettype($productInfo)));
         if($productInfo instanceof \Magento\Catalog\Model\Product) {
             $formattedData = $this->formatSingleProduct($productInfo);
         } else {
             $formattedData = $this->formatSingleProductData($productInfo);
         }
-        $formattedData['categories'] = isset($categories[$productInfo['entity_id']]) ?  $this->formatProductCategories($categories[$productInfo['entity_id']], 0, false) : [];
+        $formattedData['categories'] = !empty($categories) ?  $this->formatProductCategories($categories, 0, false) : [];
         return $formattedData;
     }
 
@@ -663,14 +661,14 @@ class ResponseFormatter
     /**
      * Format pager and products
      * @param $pager    Pager
-     * @param $productsInfo array
+     * @param $productsInfo array of \Magento\Catalog\Model\Product
      * @param $categories array
      * @return array
      */
     protected function formatPagedProducts($pager, $productsInfo, $categories = []) {
         $products = [];
         foreach($productsInfo as $product) {
-            $products[] = $this->formatProductById($product, $categories);
+            $products[] = $this->formatProductById($product, $categories[$product->getId()]);
         }
 
         return [
@@ -808,8 +806,10 @@ class ResponseFormatter
 
         return [
             'id' => $payment->getMethod(),
-            'title' => $payment->title,     // @see PaymentHelper
-            'description' => $payment->title,
+//            'title' => $payment->title,     // @see PaymentHelper
+//            'description' => $payment->title,
+            'title' => $payment->getData('title'),     // @see PaymentHelper
+            'description' => $payment->getData('title'),
             'meta_key'  => [
                 'hideit' => '', // idk what is it, but it seems like woocommerce special keys
                 'safari' => ''

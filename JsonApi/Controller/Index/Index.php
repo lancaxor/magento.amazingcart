@@ -278,8 +278,15 @@ class Index extends Action
     {
         $productId = $request->getParam('id', 0);
 //        $product = $this->productEntityFactory->getObject()->getProductById($productId);
-        $product = $this->productHelper->getSingleProduct($productId);
-        return $this->responseFormatter->formatProductById($product);
+
+        if(!$productId) {
+            return [
+                'error'     => -1,
+                'reason'    => 'id is required!'
+            ];
+        }
+        $productInfo = $this->productHelper->getSingleProduct($productId);
+        return $this->responseFormatter->formatProductById($productInfo['product'], $productInfo['categories']);
     }
 
     /**

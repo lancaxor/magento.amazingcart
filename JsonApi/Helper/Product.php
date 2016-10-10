@@ -136,7 +136,14 @@ class Product
      * @return array
      */
     public function getProductsCategories($products) {
-        $productIds = array_column($products, 'entity_id');
+
+        if(is_array($products)) {
+            $productIds = array_column($products, 'entity_id');
+        } elseif (is_int($products) or is_string($products)) {
+            $productIds = [$products];
+        } else {    // instanceof \Magento\Catalog\Model\Product
+            $productIds = [$products->getEntityId()];
+        }
 
         // for optimisation, just 1 query
         $categoryCollection = $this->getCategoriesByProductIds($productIds);
@@ -272,7 +279,10 @@ class Product
         $product->setData('image_url', $this->imageFactoryHelper->create()->init($product, $this->baseImageId)->getUrl());
         $product->setData('product_url', $product->getProductUrl());
         $product->setData('is_visible', $product->isVisibleInCatalog());
-//        die(var_dump($product->getData()));
-        return $product;
+
+        return [
+            'product' => $product,
+            'categories' => $this->getProductsCategories($product)[$product->getId()]
+        ];
     }
 }

@@ -122,8 +122,10 @@ class PaymentHelper
         $collection = $this->paymentCollectionFactory->create()
             ->addFieldToSelect('*');
 
+        /** @var \Magento\Sales\Model\Order\Payment $payment **/
         foreach($collection as &$payment) {
-            $payment->title = $this->getPaymentTitle($payment->getMethod());
+//            $payment->title = $this->getPaymentTitle($payment->getMethod());
+            $payment->setData('title', $this->getPaymentTitle($payment->getMethod()));
         }
         return $collection;
     }
