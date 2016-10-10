@@ -28,6 +28,7 @@ class Pager
     protected $pagesTotal = null;
     protected $itemsTotal = null;
 
+    #region setters
     public function setStrict($strict = true) {
         $this->strict = $strict;
         return $this;
@@ -61,7 +62,9 @@ class Pager
         $this->itemsTotal = $totalCount;
         return $this;
     }
+    #endregion setters
 
+    #region getters
     public function getLimit() {
         return $this->itemsPerPage;
     }
@@ -95,5 +98,15 @@ class Pager
         }
 
         return $this->itemsTotal;
+    }
+    #endregion getters
+
+    public function reset() {
+        $this->strict = false;
+        $this->pageNumber = null;
+        $this->itemsPerPage = null;
+        $this->pagesTotal = null;
+        $this->itemsTotal = null;
+        return $this;
     }
 }

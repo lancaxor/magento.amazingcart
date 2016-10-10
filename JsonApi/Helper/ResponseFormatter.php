@@ -50,118 +50,14 @@ class ResponseFormatter
             return [];
         }
 
-        return [
-            'created_at'    => $productInfo['created_at'],
-            'product_ID'    => intval($productInfo['entity_id']),      // product_entity.product_id
-            'is_downloadable'   => isset($productInfo['is_downloadable']) ? $productInfo['is_downloadable'] : false,
-            'is_purchasable'    => isset($productInfo['is_salable']) ? $productInfo['is_salable'] : true,    // it MUST BE false by default -_-
-            'is_featured'       => isset($productInfo['is_featured']) ? $productInfo['is_featured'] : false,
-            'visibility'        => isset($productInfo['visibility']) ? $productInfo['visibility'] : false,
-            'general'           => [
-                'title'     => $productInfo['sku'],    // product_entity.title
-                'link'      => '',
-                'content'   => [
-                    'full_html'     => '',
-                    'excepts'       => ''
-                ],
-                'SKU'           => isset($productInfo['sku']) ? $productInfo['sku'] : '',
-                'product_type'  => isset($productInfo['type_id']) ? $productInfo['type_id'] : null,    // product_entity.type_id
-                'if_external'   => [    // idk what is it
-                    'product_url'   => isset($productInfo['product_url']) ? $productInfo['product_url'] : '',
-                    'button_name'   => ''
-                ],
-                'pricing'   => [
-                    'is_on_sale'    => isset($productInfo['is_salable']) ? $productInfo['is_salable'] : false,
-                    'currency'      => '',
-                    'regular_price' => isset($productInfo['final_price']) ? $productInfo['final_price'] : '',
-                    'sale_start'    => [
-                        'unixtime'      => '',
-                        'day'           => false,
-                        'month'         => false,
-                        'year'          => false,
-                        'day_name'      => false,
-                        'fulldate'      => false
-                    ],
-                    'sale_end'    => [
-                        'unixtime'      => '',
-                        'day'           => false,
-                        'month'         => false,
-                        'year'          => false,
-                        'day_name'      => false,
-                        'fulldate'      => false
-                    ],
-                ],
-                'tax_status'    => '',
-                'tax_class'     => isset($productInfo['tax_class_id']) ? $productInfo['tax_class_id'] : null
-            ],
-            'invertory'     => [
-                'manage_stock'  => false,
-                'quantity'      => '',
-                'stock_status'  => '',
-                'allow_backorder'   => false,
-                'allow_backorder_require_notification'  => false,
-                'sold_individually' => false
-            ],
-            'shipping'  => [
-                'weight'    => [
-                    'has_weight'    => false,
-                    'unit'          => 'kg',
-                    'value'         => ''   // attribute 82
-                ],
-                'dimension'     => [
-                    'has_dimension' => false,
-                    'unit'          => 'cm',
-                    'value_l'       => '',
-                    'value_w'       => '',
-                    'value_h'       => '',
-                ],
-                'shipping_class'    => [
-                    'class_name'    => '',
-                    'class_id'      => 0
-                ]
-            ],
-            'linked_products'   => [
-                'upsells'       => [],
-                'cross_sale'    => [],
-                'grouped'       => 0
-            ],
-            'attributes'    => [
-                'has_attributes'    => false,
-                'attributes'        => []
-            ],
-            'advanced'  => [
-                'purchase_note'     => '',
-                'menu_order'        => 0,
-                'comment_status'    => 'open'
-            ],
-            'ratings'   => [
-                'average_rating'    => '',
-                'rating_count'      => 0
-            ],
-            'if_variants'   => [
-                'min_price'     => [
-                    'currency'  => '',
-                    'price'     => isset($productInfo['min_price']) ? $productInfo['min_price'] : null,
-                ],
-                'max_price'     => [
-                    'currency'  => '',
-                    'price'     => isset($productInfo['max_price']) ? $productInfo['max_price'] : null,
-                ],
-                'variables' => []
-            ],
-            'if_group'  => [
-                'min_price'     => [
-                    'currency'  => '',
-                    'price'     => ''
-                ],
-                'group' => []
-            ],
-            'product_gallery'   => [
-                'featured_images'   => '0',
-                'other_images'      => []
-            ],
-            'categories'    => isset($categories[$productInfo['entity_id']]) ?  $this->formatProductCategories($categories[$productInfo['entity_id']], 0, false) : []
-        ];
+//        die(var_dump(gettype($productInfo)));
+        if($productInfo instanceof \Magento\Catalog\Model\Product) {
+            $formattedData = $this->formatSingleProduct($productInfo);
+        } else {
+            $formattedData = $this->formatSingleProductData($productInfo);
+        }
+        $formattedData['categories'] = isset($categories[$productInfo['entity_id']]) ?  $this->formatProductCategories($categories[$productInfo['entity_id']], 0, false) : [];
+        return $formattedData;
     }
 
     /**
@@ -946,6 +842,134 @@ class ResponseFormatter
             'count' => $category->getProductCount(),
             'filter' => 'raw',
         ];
+    }
+
+    /**
+     * FUCK ME when I did it before I learn collection!!1! >.<
+     * @param $productData array
+     * @return array
+     */
+    protected function formatSingleProductData($productData) {
+        return [
+            'created_at'    => $productData['created_at'],
+            'product_ID'    => intval($productData['entity_id']),      // product_entity.product_id
+            'is_downloadable'   => isset($productData['is_downloadable']) ? $productData['is_downloadable'] : false,
+            'is_purchasable'    => isset($productData['is_salable']) ? $productData['is_salable'] : true,    // it MUST BE false by default -_-
+            'is_featured'       => isset($productData['is_featured']) ? $productData['is_featured'] : false,
+            'visibility'        => isset($productData['is_visible']) ? $productData['is_visible'] : false,
+            'general'           => [
+                'title'     => $productData['sku'],    // product_entity.title
+                'link'      => isset($productData['product_url']) ? $productData['product_url'] : '',
+                'content'   => [
+                    'full_html'     => '',
+                    'excepts'       => ''
+                ],
+                'SKU'           => isset($productData['sku']) ? $productData['sku'] : '',
+                'product_type'  => isset($productData['type_id']) ? $productData['type_id'] : null,    // product_entity.type_id
+                'if_external'   => [    // idk what is it
+                    'product_url'   => isset($productData['product_url']) ? $productData['product_url'] : '',
+                    'button_name'   => $productData['sku']
+                ],
+                'pricing'   => [
+                    'is_on_sale'    => isset($productData['is_salable']) ? $productData['is_salable'] : false,
+                    'currency'      => '',
+                    'regular_price' => isset($productData['final_price']) ? $productData['final_price'] : '',
+                    'sale_start'    => [
+                        'unixtime'      => '',
+                        'day'           => false,
+                        'month'         => false,
+                        'year'          => false,
+                        'day_name'      => false,
+                        'fulldate'      => false
+                    ],
+                    'sale_end'    => [
+                        'unixtime'      => '',
+                        'day'           => false,
+                        'month'         => false,
+                        'year'          => false,
+                        'day_name'      => false,
+                        'fulldate'      => false
+                    ],
+                ],
+                'tax_status'    => '',
+                'tax_class'     => isset($productData['tax_class_id']) ? $productData['tax_class_id'] : null
+            ],
+            'invertory'     => [
+                'manage_stock'  => false,
+                'quantity'      => '',
+                'stock_status'  => '',
+                'allow_backorder'   => false,
+                'allow_backorder_require_notification'  => false,
+                'sold_individually' => false
+            ],
+            'shipping'  => [
+                'weight'    => [
+                    'has_weight'    => false,
+                    'unit'          => 'kg',
+                    'value'         => ''   // attribute 82
+                ],
+                'dimension'     => [
+                    'has_dimension' => false,
+                    'unit'          => 'cm',
+                    'value_l'       => '',
+                    'value_w'       => '',
+                    'value_h'       => '',
+                ],
+                'shipping_class'    => [
+                    'class_name'    => '',
+                    'class_id'      => 0
+                ]
+            ],
+            'linked_products'   => [
+                'upsells'       => [],
+                'cross_sale'    => [],
+                'grouped'       => 0
+            ],
+            'attributes'    => [
+                'has_attributes'    => false,
+                'attributes'        => []
+            ],
+            'advanced'  => [
+                'purchase_note'     => '',
+                'menu_order'        => 0,
+                'comment_status'    => 'open'
+            ],
+            'ratings'   => [
+                'average_rating'    => '',
+                'rating_count'      => 0
+            ],
+            'if_variants'   => [
+                'min_price'     => [
+                    'currency'  => '',
+                    'price'     => isset($productData['min_price']) ? $productData['min_price'] : null,
+                ],
+                'max_price'     => [
+                    'currency'  => '',
+                    'price'     => isset($productData['max_price']) ? $productData['max_price'] : null,
+                ],
+                'variables' => []
+            ],
+            'if_group'  => [
+                'min_price'     => [
+                    'currency'  => '',
+                    'price'     => ''
+                ],
+                'group' => []
+            ],
+            'product_gallery'   => [
+                'featured_images'   => isset($productData['image_url']) ? $productData['image_url'] : '',
+                'other_images'      => []
+            ],
+        ];
+    }
+
+    /**
+     * @param $product \Magento\Catalog\Model\Product
+     * @return array
+     */
+    protected function formatSingleProduct($product) {
+        $data = $this->formatSingleProductData($product->getData());
+        return $data;
     }
 
     //endregion

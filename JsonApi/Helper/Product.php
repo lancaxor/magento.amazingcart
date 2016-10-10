@@ -126,18 +126,15 @@ class Product
     public function getRecentProducts($pager, $order = 'DESC') {
 
         $data = $this->getOrderedProductModel($pager, $order);
+        $collection = $data['model'];
+        $productsData = $collection->getData();
+
         $productsInfo = [
-            'data'  => $data['model']->getData(),
+            'data'  => $collection,
             'count' => $data['count']
         ];
 
-        /** @var \Magento\Catalog\Model\Product $product */
-//        $products = $data['model'];
-//        foreach($products as $product) {
-//            var_dump($product->getData());
-//        }
-//die('dead');
-        $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
+        $productsInfo['categories'] = $this->getProductsCategories($productsData);
         return $productsInfo;
     }
 
@@ -182,6 +179,10 @@ class Product
             $productCollection->getSelect()->order('created_at ' . $order);
         }
 
+        $productCollection->addMinimalPrice()
+            ->addFinalPrice()
+            ->addTaxPercents();
+
         $productsCount = $productCollection->count();
         $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
         $productModel = $this->categoryProductFactory->create();
@@ -196,6 +197,7 @@ class Product
             $product->setData('is_salable', $productModel->getIsSalable());
             $product->setData('image_url', $imageUrl);
             $product->setData('product_url', $product->getProductUrl());
+            $product->setData('is_visible', $productModel->isVisibleInCatalog());
         }
         unset($product);
 

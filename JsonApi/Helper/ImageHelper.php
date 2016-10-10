@@ -23,9 +23,6 @@ class ImageHelper
 
     public function getProductImages($productIds) {
         if (is_array($productIds)) {
-
         }
-
-//        $this->imageHelper->create()->init()
     }
 }
