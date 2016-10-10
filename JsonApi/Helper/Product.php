@@ -82,20 +82,18 @@ class Product
 
     /**
      * Getting featured products (with attribute is_featured = 1)
+     *
      * @return array
      */
     public function getFeaturedProducts() {
-
-        $featuredProducts = $this->productCollectionFactory->create()
-            ->addAttributeToFilter('is_featured', 1)
-            ->addAttributeToSelect('*')
-            ->load()
-            ->getData();
-
+        $data = $this->getOrderedProductModel(null, 'rand', ['is_featured' => 1]);
+        $collection = $data['model'];
         $productsInfo = [
-            'data'  => $featuredProducts
+            'data'  => $collection,
+            'count' => $data['count']
         ];
-        $productsInfo['categories'] = $this->getProductsCategories($featuredProducts);
+
+        $productsInfo['categories'] = $this->getProductsCategories($collection->getData());
         return $productsInfo;
     }
 
@@ -108,13 +106,14 @@ class Product
     public function getRandomProducts($pager, $order = 'DESC') {
 
         $data = $this->getOrderedProductModel($pager, 'rand');
+        $collection = $data['model'];
 
         $productsInfo = [
-            'data'  => $data['model']->getData(),
+            'data'  => $collection,
             'count' => $data['count']
         ];
 
-        $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
+        $productsInfo['categories'] = $this->getProductsCategories($collection->getData());
         return $productsInfo;
     }
 
@@ -164,11 +163,12 @@ class Product
     }
 
     /**
-     * @param $pager    Pager
-     * @param $order    string
+     * @param $pager Pager
+     * @param $order string
+     * @param $filterAttributes array
      * @return array
      */
-    protected function getOrderedProductModel($pager, $order) {
+    protected function getOrderedProductModel($pager = null, $order = 'rand', $filterAttributes = []) {
 
         // I become love Magento because of these collections ^.^
         $productCollection = $this->productCollectionFactory->create();
@@ -180,11 +180,21 @@ class Product
         }
 
         $productCollection->addMinimalPrice()
+            ->addAttributeToSelect('is_featured', 'left')
             ->addFinalPrice()
             ->addTaxPercents();
 
+        if(!empty($filterAttributes)) {
+            foreach($filterAttributes as $name => $value) {
+                $productCollection->addAttributeToFilter($name, $value);
+            }
+        }
+
         $productsCount = $productCollection->count();
-        $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
+
+        if (isset($pager)) {
+            $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
+        }
         $productModel = $this->categoryProductFactory->create();
 
         /** @var \Magento\Catalog\Model\Product $product */

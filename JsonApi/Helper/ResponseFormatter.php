@@ -855,7 +855,7 @@ class ResponseFormatter
             'product_ID'    => intval($productData['entity_id']),      // product_entity.product_id
             'is_downloadable'   => isset($productData['is_downloadable']) ? $productData['is_downloadable'] : false,
             'is_purchasable'    => isset($productData['is_salable']) ? $productData['is_salable'] : true,    // it MUST BE false by default -_-
-            'is_featured'       => isset($productData['is_featured']) ? $productData['is_featured'] : false,
+            'is_featured'       => isset($productData['is_featured']) && $productData['is_featured'] ? true : false,
             'visibility'        => isset($productData['is_visible']) ? $productData['is_visible'] : false,
             'general'           => [
                 'title'     => $productData['sku'],    // product_entity.title
