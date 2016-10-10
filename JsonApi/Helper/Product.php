@@ -11,7 +11,6 @@ namespace Amazingcard\JsonApi\Helper;
 
 use Amazingcard\JsonApi\Model\Base\BaseAbstractModel;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
-use Magento\Catalog\Model\Product\ImageFactory;
 
 class Product
 {
@@ -55,9 +54,12 @@ class Product
     protected $categoryProductCollection;
 
     /**
-     * @var ImageFactory
+     * @var \Magento\Catalog\Helper\ImageFactory
      */
-    protected $imageFactory;
+    protected $imageFactoryHelper;
+
+//    protected $baseImageId = 'category_page_list';
+    protected $baseImageId = 'product_base_image';
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
@@ -66,7 +68,7 @@ class Product
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
         \Magento\Catalog\Model\ProductFactory $categoryProductFactory,
         \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel,
-        \Magento\Catalog\Model\Product\ImageFactory $imageFactory
+        \Magento\Catalog\Helper\ImageFactory $imageFactory
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -75,7 +77,7 @@ class Product
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->categoryProductFactory = $categoryProductFactory;
         $this->categoryProductModel = $categoryProductModel;
-        $this->imageFactory = $imageFactory;
+        $this->imageFactoryHelper = $imageFactory;
     }
 
     /**
@@ -129,6 +131,12 @@ class Product
             'count' => $data['count']
         ];
 
+        /** @var \Magento\Catalog\Model\Product $product */
+//        $products = $data['model'];
+//        foreach($products as $product) {
+//            var_dump($product->getData());
+//        }
+//die('dead');
         $productsInfo['categories'] = $this->getProductsCategories($productsInfo['data']);
         return $productsInfo;
     }
@@ -174,18 +182,23 @@ class Product
             $productCollection->getSelect()->order('created_at ' . $order);
         }
 
-        $productCollection->addAttributeToSelect('image');
-
         $productsCount = $productCollection->count();
         $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
-        die(var_dump($this->imageFactory->create()->getResourceName()));
+        $productModel = $this->categoryProductFactory->create();
 
-        $imageData = $this->imageFactory->create()
-            ->getCollection()
-            ->getData();
+        /** @var \Magento\Catalog\Model\Product $product */
+        foreach ($productCollection as &$product) {
 
+            // for additional data
+            $productModel->getResource()->load($productModel, $product->getId());
+            $imageUrl = $this->imageFactoryHelper->create()->init($productModel, $this->baseImageId)->getUrl();
+            $productModel->clearInstance();
+            $product->setData('is_salable', $productModel->getIsSalable());
+            $product->setData('image_url', $imageUrl);
+            $product->setData('product_url', $product->getProductUrl());
+        }
+        unset($product);
 
-        die(var_dump($imageData));
         return [
             'model' => $productCollection,
             'count' => $productsCount

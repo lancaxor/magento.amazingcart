@@ -54,7 +54,7 @@ class ResponseFormatter
             'created_at'    => $productInfo['created_at'],
             'product_ID'    => intval($productInfo['entity_id']),      // product_entity.product_id
             'is_downloadable'   => isset($productInfo['is_downloadable']) ? $productInfo['is_downloadable'] : false,
-            'is_purchasable'    => true,
+            'is_purchasable'    => isset($productInfo['is_salable']) ? $productInfo['is_salable'] : true,    // it MUST BE false by default -_-
             'is_featured'       => isset($productInfo['is_featured']) ? $productInfo['is_featured'] : false,
             'visibility'        => isset($productInfo['visibility']) ? $productInfo['visibility'] : false,
             'general'           => [
@@ -67,7 +67,7 @@ class ResponseFormatter
                 'SKU'           => isset($productInfo['sku']) ? $productInfo['sku'] : '',
                 'product_type'  => isset($productInfo['type_id']) ? $productInfo['type_id'] : null,    // product_entity.type_id
                 'if_external'   => [    // idk what is it
-                    'product_url'   => '',
+                    'product_url'   => isset($productInfo['product_url']) ? $productInfo['product_url'] : '',
                     'button_name'   => ''
                 ],
                 'pricing'   => [
