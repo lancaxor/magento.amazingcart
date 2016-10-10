@@ -279,7 +279,7 @@ class Product
         $product->setData('image_url', $this->imageFactoryHelper->create()->init($product, $this->baseImageId)->getUrl());
         $product->setData('product_url', $product->getProductUrl());
         $product->setData('is_visible', $product->isVisibleInCatalog());
-
+die(var_dump($product->getQty()));
         return [
             'product' => $product,
             'categories' => $this->getProductsCategories($product)[$product->getId()]

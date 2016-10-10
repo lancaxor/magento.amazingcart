@@ -872,7 +872,7 @@ class ResponseFormatter
                 ],
                 'pricing'   => [
                     'is_on_sale'    => isset($productData['is_salable']) ? $productData['is_salable'] : false,
-                    'currency'      => '',
+                    'currency'      => '$',
                     'regular_price' => isset($productData['final_price']) ? $productData['final_price'] : '',
                     'sale_start'    => [
                         'unixtime'      => '',
@@ -940,11 +940,11 @@ class ResponseFormatter
             ],
             'if_variants'   => [
                 'min_price'     => [
-                    'currency'  => '',
+                    'currency'  => '$',
                     'price'     => isset($productData['min_price']) ? $productData['min_price'] : null,
                 ],
                 'max_price'     => [
-                    'currency'  => '',
+                    'currency'  => '$',
                     'price'     => isset($productData['max_price']) ? $productData['max_price'] : null,
                 ],
                 'variables' => []
