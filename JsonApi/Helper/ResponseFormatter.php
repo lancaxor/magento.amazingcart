@@ -896,8 +896,8 @@ class ResponseFormatter
             ],
             'invertory'     => [
                 'manage_stock'  => false,
-                'quantity'      => '',
-                'stock_status'  => '',
+                'quantity'      => isset($productData['quantity']) ? $productData['quantity'] : 0,
+                'stock_status'  => isset($productData['stock_status']) ? $productData['stock_status'] : false,
                 'allow_backorder'   => false,
                 'allow_backorder_require_notification'  => false,
                 'sold_individually' => false
@@ -969,6 +969,8 @@ class ResponseFormatter
      */
     protected function formatSingleProduct($product) {
         $data = $this->formatSingleProductData($product->getData());
+        $data['quantity'] = $product->getQty();
+        $data['stock_status'] = $product->isInStock();
         return $data;
     }
 

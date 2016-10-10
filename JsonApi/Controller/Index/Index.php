@@ -735,6 +735,26 @@ class Index extends Action
     #region service actions
 
     /**
+     * Get all items in specified cart
+     *
+     * @param $request \Magento\Framework\App\RequestInterface
+     * @return array
+     */
+    protected function confirmPayment($request) {
+        $paymentId = $request->getParam('paymentId');
+    }
+
+    /**
+     * Action for PayPal access_token redirect
+     *
+     * @param $request \Magento\Framework\App\RequestInterface
+     * @return array
+     */
+    protected function getTokenCallback($request) {
+        $accessToken = $request->getParam('access_token');
+    }
+
+    /**
      * Get current user. Return false if user is not logged in, and user data, if he is.
      * @return array|bool
      */
