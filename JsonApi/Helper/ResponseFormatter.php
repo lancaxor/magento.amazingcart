@@ -516,12 +516,12 @@ class ResponseFormatter
 
         $productsList = $featuredProductInfo['data'];
         $productsCategories = $featuredProductInfo['categories'];
-
         $productCount = count($productsList);
         $products = [];
 
         foreach($productsList as $_ => $product) {
-            $products[] = $this->formatProductById($product, $productsCategories);
+            $categories = isset($productsCategories[$product->getId()]) ? $productsCategories[$product->getId()] : [];
+            $products[] = $this->formatProductById($product, $categories);
         }
         return [
             'total_post' => $productCount,
