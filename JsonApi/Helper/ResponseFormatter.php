@@ -865,7 +865,7 @@ class ResponseFormatter
                     'excepts'       => ''
                 ],
                 'SKU'           => isset($productData['sku']) ? $productData['sku'] : '',
-                'product_type'  => isset($productData['type_id']) ? $productData['type_id'] : null,    // product_entity.type_id
+                'product_type'  => isset($productData['type_id']) && $productData['type_id'] != 'simple' ? 'external' : 'simple',
                 'if_external'   => [    // idk what is it
                     'product_url'   => isset($productData['product_url']) ? $productData['product_url'] : '',
                     'button_name'   => $productData['sku']
