@@ -895,7 +895,7 @@ class ResponseFormatter
                 'tax_status'    => '',
                 'tax_class'     => isset($productData['tax_class_id']) ? $productData['tax_class_id'] : null
             ],
-            'invertory'     => [
+            'inventory'     => [
                 'manage_stock'  => false,
                 'quantity'      => isset($productData['quantity']) ? $productData['quantity'] : 0,
                 'stock_status'  => isset($productData['stock_status']) ? $productData['stock_status'] : false,
