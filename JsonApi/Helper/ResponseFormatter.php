@@ -969,16 +969,18 @@ class ResponseFormatter
      * @return array
      */
     protected function formatSingleProduct($product) {
-        $data = $this->formatSingleProductData($product->getData());
-        $data['quantity'] = $product->getQty();
-        $data['stock_status'] = $product->isInStock();
 
-//        die(var_dump($product->getPrice(), $product->getFinalPrice()));
+        $data = $product->getData();
+        $data['quantity'] = isset($data['quantity_and_stock_status']['qty']) ? $data['quantity_and_stock_status']['qty'] : 0;
+        $data['stock_status'] = isset($data['quantity_and_stock_status']['is_in_stock']) ? $data['quantity_and_stock_status']['is_in_stock'] : false;
         if ($product->getPrice() > $product->getFinalPrice()) {
             $data['is_on_sale'] = true;
             $data['sale_price'] = $product->getFinalPrice();
             $data['final_price'] = $product->getPrice();
+        } else {
+            $data['final_price'] = $product->getFinalPrice();
         }
+        $data = $this->formatSingleProductData($data);
         return $data;
     }
 

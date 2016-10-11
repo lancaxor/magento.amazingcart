@@ -53,6 +53,32 @@ class Product
      */
     protected $imageFactoryHelper;
 
+
+    /*---------------- select something one from this... -------------------*/
+    /** @var  \Magento\CatalogInventory\Model\StockFactory */
+    protected $stockFactory;
+    /**
+     * @var \Magento\CatalogInventory\Api\StockManagementInterface
+     */
+    protected $stockManagement;
+    /**
+     * @var \Magento\CatalogInventory\Api\StockStateInterface
+     */
+    protected $stockState;
+    /**
+     * @var \Magento\CatalogInventory\Api\StockRegistryInterface
+     */
+    protected $stockRegistry;
+    /**
+     * @var \Magento\CatalogInventory\Model\ResourceModel\Stock\Item\Collection
+     */
+    protected $sockItemResource;
+    /**
+     * @var \Magento\CatalogInventory\Api\StockItemRepositoryInterface
+     */
+    protected $stockItem;
+    /*-----------------------------------------------------------------*/
+
 //    protected $baseImageId = 'category_page_list';
     protected $baseImageId = 'product_base_image';
 
@@ -63,7 +89,13 @@ class Product
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
         \Magento\Catalog\Model\ProductFactory $categoryProductFactory,
         \Magento\Catalog\Model\ResourceModel\CategoryProduct $categoryProductModel,     // TODO: remove
-        \Magento\Catalog\Helper\ImageFactory $imageFactory
+        \Magento\Catalog\Helper\ImageFactory $imageFactory,
+
+        \Magento\CatalogInventory\Model\StockFactory $stockFactory,
+        \Magento\CatalogInventory\Api\StockManagementInterface $stockManagement,
+        \Magento\CatalogInventory\Api\StockStateInterface $stockState,
+        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
+        \Magento\CatalogInventory\Api\StockItemRepositoryInterface $stockItem
     )
     {
         $this->productCollectionFactory = $productCollectionFactory;
@@ -72,6 +104,12 @@ class Product
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->productFactory = $categoryProductFactory;
         $this->imageFactoryHelper = $imageFactory;
+
+        $this->stockFactory = $stockFactory;
+        $this->stockManagement = $stockManagement;
+        $this->stockState = $stockState;
+        $this->stockRegistry = $stockRegistry;
+        $this->stockItem = $stockItem;
     }
 
     /**
@@ -190,8 +228,16 @@ class Product
                 $productCollection->addAttributeToFilter($name, $value);
             }
         }
-
         $productsCount = $productCollection->count();
+
+        // stock status and quantity
+        $productCollection->addAttributeToSelect('stock_status')->joinTable(
+            'cataloginventory_stock_item',
+            'product_id=entity_id',
+            ['qty', 'is_in_stock'],
+            '{{table}}.stock_id=1',
+            'left'
+        );
 
         if (isset($pager)) {
             $productCollection->setPage($pager->getCurrentPage(), $pager->getPageSize());
@@ -204,11 +250,12 @@ class Product
             // for additional data
             $productModel->getResource()->load($productModel, $product->getId());
             $imageUrl = $this->imageFactoryHelper->create()->init($productModel, $this->baseImageId)->getUrl();
-            $productModel->clearInstance();
             $product->setData('is_salable', $productModel->getIsSalable());
             $product->setData('image_url', $imageUrl);
             $product->setData('product_url', $product->getProductUrl());
             $product->setData('is_visible', $productModel->isVisibleInCatalog());
+            $product->setData('quantity_and_stock_status', $productModel->getData('quantity_and_stock_status'));
+            $productModel->clearInstance();
         }
         unset($product);
 
@@ -279,7 +326,7 @@ class Product
         $product->setData('image_url', $this->imageFactoryHelper->create()->init($product, $this->baseImageId)->getUrl());
         $product->setData('product_url', $product->getProductUrl());
         $product->setData('is_visible', $product->isVisibleInCatalog());
-//die(var_dump($product->getQty()));
+
         return [
             'product' => $product,
             'categories' => $this->getProductsCategories($product)[$product->getId()]

@@ -746,6 +746,7 @@ class Index extends Action
      */
     protected function confirmPayment($request) {
         $paymentId = $request->getParam('paymentId');
+        return [];
     }
 
     /**
@@ -756,6 +757,7 @@ class Index extends Action
      */
     protected function getTokenCallback($request) {
         $accessToken = $request->getParam('access_token');
+        return [];
     }
 
     /**
@@ -781,6 +783,7 @@ class Index extends Action
                 'reason'    => 'CartId is required!!1!'
             ];
         }
+        return [];
 //        return $this->quoteHelper->
     }
 
