@@ -10,6 +10,7 @@
 
 namespace Amazingcard\JsonApi\Controller\Index;
 
+use Amazingcard\JsonApi\Helper\Logger;
 use Amazingcard\JsonApi\Helper\Pager;
 use Amazingcard\JsonApi\Helper\PaymentHelper;
 use Amazingcard\JsonApi\Helper\Setting;
@@ -27,6 +28,15 @@ use Magento\Framework\App\ResponseInterface;
 
 class Index extends Action
 {
+
+    /**#@+
+     * service variables
+     */
+    private $activeLogger = true;
+    private $logRequest = true;
+    private $logResponse = true;
+    private $logResult = true;
+    /**#@-*/
 
     /**
      * @var JsonFactory
@@ -129,6 +139,11 @@ class Index extends Action
      */
     protected $settingsHelper;
 
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -150,7 +165,8 @@ class Index extends Action
         Pager $pagerHelper,
         PaymentHelper $paymentHelper,
         UrlWorker $urlWorker,
-        Settings $settingsHelper
+        Settings $settingsHelper,
+        Logger $loggerHelper
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->catalogCategoryVarcharFactory = $varcharFactory;
@@ -172,6 +188,7 @@ class Index extends Action
         $this->orderHelper = $orderHelper;
         $this->paymentHelper = $paymentHelper;
         $this->settingsHelper = $settingsHelper;
+        $this->loggerHelper = $loggerHelper;
 
         parent::__construct($context);
 
@@ -183,11 +200,14 @@ class Index extends Action
      */
     public function initialize() {
         $this->pagerHelper->setStrict(true);
+        $this->loggerHelper
+            ->setOrder(Logger::LOG_ORDER_REVERSE)
+            ->enable();
     }
 
     /**
      * Main action method
-     * @return $this
+     * @return mixed
      */
     public function execute() 
     {
@@ -195,6 +215,11 @@ class Index extends Action
         /** @var \Magento\Framework\App\RequestInterface $request */
         $request = $this->getRequest();
         $type = $request->getParam('type', null);
+
+        if($this->logRequest) {
+            $this->loggerHelper->addMessage($request->getActionName());
+            $this->loggerHelper->addMessage($request->getParams(), Logger::LOG_TYPE_DATA);
+        }
 
         /**
          * a bit of the reflection is here!
@@ -216,6 +241,10 @@ class Index extends Action
 
         if(!isset($data)) {
             $data = [];
+        }
+
+        if($this->logResult) {
+            $this->loggerHelper->addMessage($data, Logger::LOG_TYPE_DATA);
         }
 
         $resultJson = $this->resultJsonFactory->create();
