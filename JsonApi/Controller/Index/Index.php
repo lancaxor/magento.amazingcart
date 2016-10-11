@@ -32,7 +32,7 @@ class Index extends Action
     /**#@+
      * service variables
      */
-    private $activeLogger = true;
+    private $activeLogger = false;
     private $logRequest = true;
     private $logResponse = true;
     private $logResult = true;
@@ -202,7 +202,7 @@ class Index extends Action
         $this->pagerHelper->setStrict(true);
         $this->loggerHelper
             ->setOrder(Logger::LOG_ORDER_REVERSE)
-            ->enable();
+            ->enable($this->activeLogger);
     }
 
     /**

@@ -33,30 +33,30 @@ class Logger {
      * Text before message
      */
     const BEFORE_TYPE = [
-        'LOG_TYPE_INFO' => '[INFO] ',
-        'LOG_TYPE_DATA' => '[DATA]====================\n',
-        'LOG_TYPE_DEFAULT' => '[LOG] ',
-        'LOG_TYPE_ERROR' => '[ERROR!] ',
-        'LOG_TYPE_WARN' => '[WARNING!] ',
+        self::LOG_TYPE_INFO => '[INFO] ',
+        self::LOG_TYPE_DATA => "[DATA]====================\n",
+        self::LOG_TYPE_DEFAULT => '[LOG] ',
+        self::LOG_TYPE_ERROR => '[ERROR!] ',
+        self::LOG_TYPE_WARN => '[WARNING!] ',
     ];
 
     /**
      * Text after message
      */
     const AFTER_TYPE = [
-        'LOG_TYPE_INFO' => '',
-        'LOG_TYPE_DATA' => '[/DATA]======================\n',
-        'LOG_TYPE_DEFAULT' => '',
-        'LOG_TYPE_ERROR' => '',
-        'LOG_TYPE_WARN' => '',
+        self::LOG_TYPE_INFO => '',
+        self::LOG_TYPE_DATA => "\n[/DATA]======================",
+        self::LOG_TYPE_DEFAULT => '',
+        self::LOG_TYPE_ERROR => '',
+        self::LOG_TYPE_WARN => '',
     ];
 
     private $enabled = false;
     private $orderType = self::LOG_ORDER_NORMAL;
-    private $logFile = '/var/log/runtime.log';
+    private $logFile = 'var/log/runtime.log';
     private $data = [];
 
-    public function __construct($filePath = '/var/log/runtime.log', $enabled = false) {
+    public function __construct($filePath = 'var/log/runtime.log', $enabled = false) {
         $this->enabled = $enabled;
     }
 
@@ -73,8 +73,8 @@ class Logger {
         return $this;
     }
 
-    public function enable() {
-        $this->enabled = true;
+    public function enable($enabled = true) {
+        $this->enabled = $enabled;
         return $this;
     }
 
@@ -89,10 +89,11 @@ class Logger {
         }
 
         $timestamp = date('Y-m-d, H:i:s.u');
-        $message = $timestamp
+        $message = $timestamp . ': '
             . array_key_exists($type, self::BEFORE_TYPE) ? self::BEFORE_TYPE[$type] : ''
             . print_r($data, true)
-            . array_key_exists($type, self::AFTER_TYPE) ? self::AFTER_TYPE[$type] : '';
+            . array_key_exists($type, self::AFTER_TYPE) ? self::AFTER_TYPE[$type] : ''
+            . "\n";
 
         if($this->orderType = self::LOG_ORDER_NORMAL) {
             array_push($this->data, $message);
@@ -128,10 +129,13 @@ class Logger {
     }
 
     public function uploadLog($clearData = true, $append = true) {
+        if(!$this->enabled) {
+            return $this;
+        }
+        file_put_contents($this->logFile, $this->data, $append ? FILE_APPEND : null);
         if($clearData) {
             $this->data = [];
         }
-        file_put_contents($this->logFile, $this->data, $append ? FILE_APPEND : null);
         return $this;
     }
 }
