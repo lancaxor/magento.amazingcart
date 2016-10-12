@@ -216,6 +216,13 @@ class Index extends Action
         $request = $this->getRequest();
         $type = $request->getParam('type', null);
 
+        $loggingEnabled = $request->getParam('logging', false);
+        $loggingEnabled = boolval($loggingEnabled);
+        if($loggingEnabled) {
+            $this->activeLogger = true;
+            $this->loggerHelper->enable($loggingEnabled);
+        }
+
         if($this->logRequest) {
             $this->loggerHelper->addMessage($request->getActionName());
             $this->loggerHelper->addMessage($request->getParams(), Logger::LOG_TYPE_DATA);
