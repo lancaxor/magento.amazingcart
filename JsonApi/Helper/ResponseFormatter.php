@@ -171,11 +171,11 @@ class ResponseFormatter
             'shipping_address_2' => '',
             'shipping_city' => $correctShipping ? $shipping->getCity() : '',
             'shipping_postcode' => $correctShipping ? $shipping->getPostcode() : '',
-            'shipping_state' => isset($shippingRegion) ? $shippingRegion->getRegion() : null,
-            'shipping_state_code' => isset($shippingRegion) ? $shippingRegion->getRegionCode() : null,
+            'shipping_state' => isset($shippingRegion) ? $shippingRegion->getRegion() : '',
+            'shipping_state_code' => isset($shippingRegion) ? $shippingRegion->getRegionCode() : '',
             'shipping_has_state' => isset($shippingRegion),
             'shipping_country' => '',
-            'shipping_country_code' => $correctShipping ? $shipping->getCountryId() : null,
+            'shipping_country_code' => $correctShipping ? $shipping->getCountryId() : '',
             'shipping_phone'     =>  $correctShipping ? $shipping->getTelephone() : '',
             'shipping_email'     =>  ''      // reserved
         ];
@@ -203,8 +203,8 @@ class ResponseFormatter
             'billing_address_2'     => '',       // reserved
             'billing_city'          => $correctBilling ? $billing->getCity() : '',
             'billing_postcode'      => $correctBilling ? $billing->getPostcode() : '',
-            'billing_state'         => isset($billingRegion) ? $billingRegion->getRegion() : null,
-            'billing_state_code'    => isset($billingRegion) ? $billingRegion->getRegionCode() : null,
+            'billing_state'         => isset($billingRegion) ? $billingRegion->getRegion() : '',
+            'billing_state_code'    => isset($billingRegion) ? $billingRegion->getRegionCode() : '',
             'billing_has_state'     => isset($billingRegion),
             'billing_country'       => '',      // reserved
             'billing_country_code'  =>$correctBilling ? $billing->getCountryId() : '',
