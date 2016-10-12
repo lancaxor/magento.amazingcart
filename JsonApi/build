@@ -1,0 +1,19 @@
+#!/bin/bash
+
+magentoPath=var/generation/;
+
+#if [ $EUID -ne 0 ];
+if [ ! -w "$magentoPath" ]
+then
+# echo "Root required!"
+echo "Directory $magentoPath is not writable. Try sudo."
+ exit 1
+fi
+#echo 'ok'
+#exit 1
+cd bin
+echo '=== upgrading... ==='
+./magento setup:upgrade
+echo '=== compiling...==='
+./magento setup:di:compile
+cd -
