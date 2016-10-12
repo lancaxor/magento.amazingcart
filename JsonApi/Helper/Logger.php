@@ -26,7 +26,7 @@ class Logger {
      * @var self::LOG_ORDER_REVERSE reversed order (the newest data will be appended before old data)
      */
     const LOG_ORDER_NORMAL = 1;
-    const LOG_ORDER_REVERSE = 1;
+    const LOG_ORDER_REVERSE = 2;
     /**#@-*/
 
     /**
@@ -95,7 +95,7 @@ class Logger {
             . (array_key_exists($type, self::AFTER_TYPE) ? self::AFTER_TYPE[$type] : '')
             . "\n";
 
-        if($this->orderType = self::LOG_ORDER_NORMAL) {
+        if($this->orderType == self::LOG_ORDER_NORMAL) {
             array_push($this->data, $message);
         } else {
             array_unshift($this->data, $message);
@@ -143,6 +143,7 @@ class Logger {
         } else {
             file_put_contents($this->logFile, $this->data, $append ? FILE_APPEND : null);
         }
+
         if($clearData) {
             $this->data = [];
         }

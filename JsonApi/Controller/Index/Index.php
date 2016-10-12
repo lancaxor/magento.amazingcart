@@ -201,7 +201,7 @@ class Index extends Action
     public function initialize() {
         $this->pagerHelper->setStrict(true);
         $this->loggerHelper
-            ->setOrder(Logger::LOG_ORDER_REVERSE)
+            ->setOrder(Logger::LOG_ORDER_NORMAL)
             ->enable($this->activeLogger);
     }
 
@@ -221,6 +221,8 @@ class Index extends Action
             $this->activeLogger = $loggingEnabled;
             $this->loggerHelper->enable($loggingEnabled);
         }
+
+        $this->loggerHelper->addMessage('Controller Action Start!', Logger::LOG_TYPE_INFO);
 
         if($this->logRequest) {
             $this->loggerHelper->addMessage('ActionName: ', Logger::LOG_TYPE_INFO);
@@ -261,6 +263,7 @@ class Index extends Action
         }
 
         $resultJson = $this->resultJsonFactory->create();
+        $this->loggerHelper->addMessage('Controller Action End!', Logger::LOG_TYPE_INFO);
         return $resultJson->setData($data);
     }
 
