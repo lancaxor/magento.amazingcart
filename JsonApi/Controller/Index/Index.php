@@ -215,7 +215,6 @@ class Index extends Action
         /** @var \Magento\Framework\App\RequestInterface $request */
         $request = $this->getRequest();
         $type = $request->getParam('type', null);
-
         $loggingEnabled = $request->getParam('logging');
         if(isset($loggingEnabled)) {
             $loggingEnabled = boolval($loggingEnabled);

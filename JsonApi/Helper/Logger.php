@@ -90,9 +90,9 @@ class Logger {
 
         $timestamp = date('Y-m-d, H:i:s.u');
         $message = $timestamp . ': '
-            . array_key_exists($type, self::BEFORE_TYPE) ? self::BEFORE_TYPE[$type] : ''
+            . (array_key_exists($type, self::BEFORE_TYPE) ? self::BEFORE_TYPE[$type] : '')
             . print_r($data, true)
-            . array_key_exists($type, self::AFTER_TYPE) ? self::AFTER_TYPE[$type] : ''
+            . (array_key_exists($type, self::AFTER_TYPE) ? self::AFTER_TYPE[$type] : '')
             . "\n";
 
         if($this->orderType = self::LOG_ORDER_NORMAL) {
