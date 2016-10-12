@@ -278,17 +278,24 @@ class ResponseFormatter
         ];
     }
 
-    public function formatReviewsByProduct($reviewsData, $productId) {
+    public function formatReviewsByProduct($reviewsData, $productId, $parentId = 0) {
 
         $result = [
-            'postID'    => $productId,
-            'comments'  => []
+            'postID'        => $productId,
+            'comments'      => [],
+            'main_comment'  => []
         ];
+
+        if(!$parentId && !empty($reviewsData)) {
+            $result['main_comment'] = current($reviewsData); // the first comment
+        }
+
         foreach($reviewsData as $review) {
 
             $item = [
                 'comment_id' => $review['review_id'],       // review_id
                 'status' => $review['status_id'],
+                'followed' => 'unfollowed',
                 'author' => [
                     'avatar' => null,  // user have no avatar in magento
                     'author_id' => $review['customer_id'],
@@ -296,18 +303,23 @@ class ResponseFormatter
                 ],
                 'date' => $review['created_at'],     // mg_review.created_at
                 'rating' => 0,
-                'comment_author_IP' => null,
+                'comment_author_IP' => '',
                 'unixtime' => $review['timestamp'],
                 'servertime' => $review['timestamp'],
                 'ago' => $this->getAgoString($review['created_at']),
-                'parent' => 0,
-                'agent' => null,
+                'parent' => '0',
+                'agent' => '',
                 'content' => $review['detail'],
                 'childs' => []   // review cannot has comments
             ];
 
             $result['comments'][] = $item;
+
+            if($parentId && $review['review_id'] == $parentId) {
+                $result['main_comment'] = $item;
+            }
         }
+
         return $result;
     }
 
