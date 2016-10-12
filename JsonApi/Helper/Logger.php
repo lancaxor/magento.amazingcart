@@ -34,7 +34,7 @@ class Logger {
      */
     const BEFORE_TYPE = [
         self::LOG_TYPE_INFO => '[INFO] ',
-        self::LOG_TYPE_DATA => "[DATA]====================\n",
+        self::LOG_TYPE_DATA => "\n[DATA]====================\n",
         self::LOG_TYPE_DEFAULT => '[LOG] ',
         self::LOG_TYPE_ERROR => '[ERROR!] ',
         self::LOG_TYPE_WARN => '[WARNING!] ',
@@ -45,7 +45,7 @@ class Logger {
      */
     const AFTER_TYPE = [
         self::LOG_TYPE_INFO => '',
-        self::LOG_TYPE_DATA => "\n[/DATA]======================",
+        self::LOG_TYPE_DATA => "\n[/DATA]======================\n",
         self::LOG_TYPE_DEFAULT => '',
         self::LOG_TYPE_ERROR => '',
         self::LOG_TYPE_WARN => '',
@@ -120,8 +120,11 @@ class Logger {
     }
 
     public function getStringLog() {
-        implode('\n', $this->data);
-        return $this;
+        $data = '';
+        if(!empty($this->data) && is_array($this->data)) {
+            $data = implode('\n', $this->data);
+        }
+        return $data;
     }
     public function clearLog() {
         $this->data = [];
@@ -132,7 +135,14 @@ class Logger {
         if(!$this->enabled) {
             return $this;
         }
-        file_put_contents($this->logFile, $this->data, $append ? FILE_APPEND : null);
+        if(!file_exists($this->logFile)) {
+            file_put_contents($this->logFile, '');  // for creating file if not exists
+        }
+        if($this->orderType == self::LOG_ORDER_REVERSE) {
+            file_put_contents($this->logFile, $this->getStringLog() . file_get_contents($this->logFile));
+        } else {
+            file_put_contents($this->logFile, $this->data, $append ? FILE_APPEND : null);
+        }
         if($clearData) {
             $this->data = [];
         }
