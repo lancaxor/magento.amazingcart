@@ -32,7 +32,7 @@ class Index extends Action
     /**#@+
      * service variables
      */
-    private $activeLogger = false;
+    private $activeLogger = true;
     private $logRequest = true;
     private $logResponse = true;
     private $logResult = true;
@@ -216,10 +216,11 @@ class Index extends Action
         $request = $this->getRequest();
         $type = $request->getParam('type', null);
 
-        $loggingEnabled = $request->getParam('logging', false);
+        $loggingEnabled = $request->getParam('logging');
         $loggingEnabled = boolval($loggingEnabled);
-        if($loggingEnabled) {
-            $this->activeLogger = true;
+        if(isset($loggingEnabled)) {
+            $loggingEnabled = boolval($loggingEnabled);
+            $this->activeLogger = $loggingEnabled;
             $this->loggerHelper->enable($loggingEnabled);
         }
 
