@@ -372,6 +372,7 @@ class Index extends Action
     {
 
         $productId = $request->getParam('id');
+        $parentId = $request->getParam('parent', 0);
 
         if (!isset($productId)) {
             return $this->responseFormatter->formatError('Id value is required!', 6);
@@ -380,7 +381,7 @@ class Index extends Action
         /** @var $model \Amazingcard\JsonApi\Model\OverrideCore\Review */
         $model = $this->coreReviewFactory->create();
         $data = $model->getList($productId);
-        return $this->responseFormatter->formatReviewsByProduct($data, $productId);
+        return $this->responseFormatter->formatReviewsByProduct($data, $productId, $parentId);
     }
 
     /**
