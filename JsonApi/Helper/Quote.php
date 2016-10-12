@@ -154,6 +154,7 @@ class Quote
     public function cartApi($login, $password, $productIdJSON, $couponCodeJSON) {
 
         $loginData = $this->userHelper->login($login, $password);
+        $allowSave = false;
         if(isset($loginData['error'])) {
 
             return [
@@ -176,26 +177,29 @@ class Quote
             $this->cart->removeItem($item->getId());
         }
 
-        foreach ($productIds as $id => $qty) {
-            $product = $this->productRepository->getById($id);
-            $params = [
-                'product'   => $id,
-                'qty'      => $qty
-            ];
+        if($productIds && is_array($productIds)) {
+            $allowSave = true;
+            foreach ($productIds as $id => $qty) {
+                $product = $this->productRepository->getById($id);
+                $params = [
+                    'product' => $id,
+                    'qty'     => $qty
+                ];
 
-            // check if the product is in the stock
-            $isInStock = $this->stockState->verifyStock($id);
+                // check if the product is in the stock
+                $isInStock = $this->stockState->verifyStock($id);
 
-            if($isInStock) {
-                try {
-                    $this->cart->addProduct($product, $params);
-                } catch (LocalizedException $exception) {
+                if ($isInStock) {
+                    try {
+                        $this->cart->addProduct($product, $params);
+                    } catch (LocalizedException $exception) {
+                        $ignoredProducts[] = $id;
+                    }
+                } else {
                     $ignoredProducts[] = $id;
                 }
-            } else {
-                $ignoredProducts[] = $id;
-            }
 
+            }
         }
 
         //--- coupons
@@ -229,7 +233,6 @@ class Quote
                 $coupons['applied-coupon'][] = $couponCode;
             }
         }
-
         $this->cart->getQuote()->collectTotals();
 
 //        $this->cart->getC
@@ -237,7 +240,9 @@ class Quote
 //        $paymentGateways = $this->paymentHelper->getPaymentArray();
         $paymentMethods = $this->paymentHelper->getPaymentCollection();
 
-        $this->cart->save();
+        if($allowSave) {
+            $this->cart->save();
+        }
         return [
             'cart'              => $this->cart,
             'coupon'            => $coupons,
