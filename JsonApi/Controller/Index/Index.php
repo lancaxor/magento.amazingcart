@@ -34,8 +34,8 @@ class Index extends Action
      */
     private $activeLogger = true;
     private $logRequest = true;
-    private $logResponse = true;
-    private $logResult = true;
+    private $logMethodName = true;
+    private $logResult = false;
     /**#@-*/
 
     /**
@@ -223,7 +223,9 @@ class Index extends Action
         }
 
         if($this->logRequest) {
+            $this->loggerHelper->addMessage('ActionName: ', Logger::LOG_TYPE_INFO);
             $this->loggerHelper->addMessage($request->getActionName());
+            $this->loggerHelper->addMessage('Params: ', Logger::LOG_TYPE_INFO);
             $this->loggerHelper->addMessage($request->getParams(), Logger::LOG_TYPE_DATA);
         }
 
@@ -238,6 +240,11 @@ class Index extends Action
             ->setRawUrl($type)
             ->decodeUrl(UrlWorker::TYPE_PUBLIC_METHOD)
             ->getDecodedUrl();
+
+        if($this->logMethodName) {
+            $this->loggerHelper->addMessage('Function Name: ', Logger::LOG_TYPE_INFO);
+            $this->loggerHelper->addMessage($functionName);
+        }
 
         if(method_exists($this, $functionName)) {
             $data = call_user_func(array($this, $functionName), $request);
