@@ -217,7 +217,6 @@ class Index extends Action
         $type = $request->getParam('type', null);
 
         $loggingEnabled = $request->getParam('logging');
-        $loggingEnabled = boolval($loggingEnabled);
         if(isset($loggingEnabled)) {
             $loggingEnabled = boolval($loggingEnabled);
             $this->activeLogger = $loggingEnabled;
