@@ -179,37 +179,32 @@ class ResponseFormatter
             'shipping_phone'     =>  $correctShipping && $shipping->getTelephone() ? $shipping->getTelephone() : '',
             'shipping_email'     =>  ''      // reserved
         ];
-//        $shipping = isset($customerInfo['shipping']) ? $customerInfo['shipping'] : [];
-//        if($shipping instanceof \Magento\Customer\Api\Data\AddressInterface) {
-//            $shippingRegion = $shipping->getRegion();
-//
-//        }
         unset($shipping);
 
         $correctBilling = (
-            isset($customerInfo['shipping']) &&
-            $customerInfo['shipping'] instanceof \Magento\Customer\Api\Data\AddressInterface
+            isset($customerInfo['billing']) &&
+            $customerInfo['billing'] instanceof \Magento\Customer\Api\Data\AddressInterface
         );
 
         if($correctBilling) {
-            $billing = $customerInfo['shipping'];
+            $billing = $customerInfo['billing'];
             $billingRegion = $billing->getRegion();
         }
         $formattedBilling = [
-            'billing_first_name'    => $correctBilling && $billing->getFirstname() ? $billing->getFirstname() : '',
-            'billing_last_name'     => $correctBilling && $billing->getLastname() ? $billing->getLastname() : '',
-            'billing_company'       => $correctBilling && $billing->getCompany() ? $billing->getCompany() : '',
+            'billing_first_name'    => ($correctBilling && $billing->getFirstname()) ? $billing->getFirstname() : '',
+            'billing_last_name'     => ($correctBilling && $billing->getLastname()) ? $billing->getLastname() : '',
+            'billing_company'       => ($correctBilling && $billing->getCompany()) ? $billing->getCompany() : '',
             'billing_address_1'     => ($correctBilling && $billing->getStreet()) ? implode(', ', $billing->getStreet()) : '',
             'billing_address_2'     => '',       // reserved
-            'billing_city'          => $correctBilling && $billing->getCity() ? $billing->getCity() : '',
-            'billing_postcode'      => $correctBilling && $billing->getPostcode() ? $billing->getPostcode() : '',
-            'billing_state'         => isset($billingRegion) && $billingRegion->getRegion() ? $billingRegion->getRegion() : '',
-            'billing_state_code'    => isset($billingRegion) && $billingRegion->getRegionCode()? $billingRegion->getRegionCode() : '',
+            'billing_city'          => ($correctBilling && $billing->getCity()) ? $billing->getCity() : '',
+            'billing_postcode'      => ($correctBilling && $billing->getPostcode()) ? $billing->getPostcode() : '',
+            'billing_state'         => (isset($billingRegion) && $billingRegion->getRegion()) ? $billingRegion->getRegion() : '',
+            'billing_state_code'    => (isset($billingRegion) && $billingRegion->getRegionCode())? $billingRegion->getRegionCode() : '',
             'billing_has_state'     => isset($billingRegion),
             'billing_country'       => '',      // reserved
-            'billing_country_code'  =>$correctBilling && $billing->getCountryId() ? $billing->getCountryId() : '',
-            'billing_phone'     =>  $correctBilling && $billing->getTelephone() ? $billing->getTelephone() : '',
-            'billing_email'     =>  ''      // reserved
+            'billing_country_code'  => ($correctBilling && $billing->getCountryId())? $billing->getCountryId() : '',
+            'billing_phone'         =>  ($correctBilling && $billing->getTelephone())? $billing->getTelephone() : '',
+            'billing_email'         =>  ''      // reserved
         ];
         unset($billing);
 

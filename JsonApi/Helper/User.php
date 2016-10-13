@@ -169,15 +169,25 @@ class User
         if(isset($defaultBilling)) {
             $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
         } else {
+
+            //create new billing address for the customer
             $this->defaultBilling = $this->addressFactory->create();
             $this->defaultBilling->setCustomerId($this->customerObject->getId());
+            $this->addressRepository->save($this->defaultBilling);
+            $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
+            $this->customerRepository->save($this->customerObject);
         }
 
         if(isset($defaultShipping)) {
             $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
         } else {
+
+            // create new shipping address for the customer
             $this->defaultShipping = $this->addressFactory->create();
             $this->defaultShipping->setCustomerId($this->customerObject->getId());
+            $this->addressRepository->save($this->defaultShipping);
+            $this->customerObject->setDefaultShipping($this->defaultShipping->getId());
+            $this->customerRepository->save($this->customerObject);
         }
 
         return [
@@ -360,9 +370,11 @@ class User
 
         // save to database
         // and we don`t have to write smth if nothing was changed
+        var_dump('before saving...', $isEditedBilling, $billingData, $this->addressRepository->getById($this->defaultBilling->getId())->getCompany());
         if($isEditedBilling) {
             $this->addressRepository->save($this->defaultBilling);
         }
+        var_dump('after saving', $this->addressRepository->getById($this->defaultBilling->getId())->getCompany());
 
         return [
             'status'    => 0,
