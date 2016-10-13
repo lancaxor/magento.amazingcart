@@ -722,10 +722,10 @@ class Index extends Action
     protected function getMyOrder($request) {
         $username = $request->getParam('username');
         $password = $request->getParam('password');
-        $filter = $request->getParam('filter');
+        $filter = $request->getParam('filter', 'All');
 
         $userOrdersInfo = $this->orderHelper->getOrdersByUser($username, $password, $filter);
-        $formattedOrders = $this->responseFormatter->formatMyOrders($userOrdersInfo);
+        $formattedOrders = $this->responseFormatter->formatMyOrders($userOrdersInfo, $filter);
         return $formattedOrders;
     }
 

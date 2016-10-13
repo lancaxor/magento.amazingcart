@@ -595,10 +595,20 @@ class ResponseFormatter
         return $formattedOrder;
     }
 
-    public function formatMyOrders($myOrdersInfo) {
+    public function formatMyOrders($myOrdersInfo, $filter = 'All') {
+
+        if(isset($myOrdersInfo['error'])) {
+            return [
+                'status'    => $myOrdersInfo['error'],
+                'reason'    => $myOrdersInfo['reason']
+            ];
+        }
 
         $formattedOrders = [];
+        $orderCount = 0;
         if(isset($myOrdersInfo['orders'])) {
+
+            $orderCount = count($myOrdersInfo['orders']);
 
             /** @var OrderInterface $order */
             foreach ($myOrdersInfo['orders'] as $order) {
@@ -612,7 +622,11 @@ class ResponseFormatter
                 $formattedOrders[] = $formattedOrder;
             }
         }
-        return $formattedOrders;
+        return  [
+            'total_post' => $orderCount,
+            'filter' => $filter,
+            'my_order' => $formattedOrders
+        ];
     }
 
     /**

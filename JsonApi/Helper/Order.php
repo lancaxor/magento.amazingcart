@@ -151,11 +151,10 @@ class Order
         $loginInfo = $this->userHelper->login($userName, $password);
 
         if(isset($loginInfo['error'])) {
-            return $loginInfo;
-        }
-
-        if($filter && !is_array($filter)) {
-            $filter = [$filter];
+            return [
+                'error' => 1,
+                'reason' => 'Not Authorized'
+            ];
         }
 
         $currentStatus = '';
@@ -178,7 +177,7 @@ class Order
             case 'Refunded':    // Canceled?
                 $currentStatus = 'canceled';
                 break;
-            case 'Failed':
+                case 'Failed':
                 $currentStatus = 'canceled';    // idk what is this
                 break;
             case null:
@@ -196,17 +195,7 @@ class Order
         if($currentStatus) {
             $orderCollection->addFieldToFilter('status', $currentStatus);
         }
-
         $orderList = $orderCollection->getItems();
-
-//        $searchCriteria = $this->searchCriteriaBuilder
-//            ->addFilter('customer_id', $customer->getId())
-//            ->create();
-//
-//        $orderList = $this->orderRepository
-//            ->getList($searchCriteria)
-//            ->getItems();
-
         $orderItems = [];
 
         /** @var \Magento\Sales\Model\Order $order */
