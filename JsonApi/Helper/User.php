@@ -12,11 +12,10 @@ namespace Amazingcard\JsonApi\Helper;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressInterfaceFactory;
 use Magento\Customer\Api\Data\CustomerInterface;
-use Magento\Customer\Model\CustomerFactory;
 use Magento\Customer\Model\Session;
 use Magento\Framework\Exception;
-use Magento\Framework\App\Action\Context;
 
 class User
 {
@@ -65,19 +64,26 @@ class User
      */
     private $addressRepository;
 
+    /**
+     * @var \Magento\Customer\Api\Data\AddressInterfaceFactory
+     */
+    private $addressFactory;
+
 
     public function __construct(
         AccountManagementInterface $customerAccountManagement,
         CustomerInterface   $customer,
         CustomerRepositoryInterface $repositoryInterface,
         Session $customerSession,
-        AddressRepositoryInterface  $addressRepository
+        AddressRepositoryInterface  $addressRepository,
+        AddressInterfaceFactory $addressFactory
     ) {
         $this->accountManagement = $customerAccountManagement;
         $this->session = $customerSession;
         $this->customerObject = $customer;
         $this->customerRepository = $repositoryInterface;
         $this->addressRepository = $addressRepository;
+        $this->addressFactory = $addressFactory;
     }
 
     protected function getError($message, $status = -1) {
@@ -163,13 +169,15 @@ class User
         if(isset($defaultBilling)) {
             $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
         } else {
-            $this->defaultBilling = [];
+            $this->defaultBilling = $this->addressFactory->create();
+            $this->defaultBilling->setCustomerId($this->customerObject->getId());
         }
 
         if(isset($defaultShipping)) {
             $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
         } else {
-            $this->defaultShipping = [];
+            $this->defaultShipping = $this->addressFactory->create();
+            $this->defaultShipping->setCustomerId($this->customerObject->getId());
         }
 
         return [
@@ -262,13 +270,15 @@ class User
         if(isset($defaultBilling)) {
             $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
         } else {
-            $this->defaultBilling = [];
+            $this->defaultBilling = $this->addressFactory->create();
+            $this->defaultBilling->setCustomerId($this->customerObject->getId());
         }
 
         if(isset($defaultShipping)) {
             $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
         } else {
-            $this->defaultShipping = [];
+            $this->defaultShipping = $this->addressRepository->
+            $this->defaultShipping->setCustomerId($this->customerObject->getId());
         }
 
 

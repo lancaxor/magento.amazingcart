@@ -167,7 +167,7 @@ class ResponseFormatter
             'shipping_first_name' => $correctShipping ? $shipping->getFirstname() : '',
             'shipping_last_name' => $correctShipping ? $shipping->getLastname() : '',
             'shipping_company' => $correctShipping ? $shipping->getCompany() : '',
-            'shipping_address_1' => $correctShipping ? implode(', ', $shipping->getStreet()) : '',
+            'shipping_address_1' => ($correctShipping && $shipping->getStreet()) ? implode(', ', $shipping->getStreet()) : '',
             'shipping_address_2' => '',
             'shipping_city' => $correctShipping ? $shipping->getCity() : '',
             'shipping_postcode' => $correctShipping ? $shipping->getPostcode() : '',
@@ -199,7 +199,7 @@ class ResponseFormatter
             'billing_first_name'    => $correctBilling ? $billing->getFirstname() : '',
             'billing_last_name'     => $correctBilling ? $billing->getLastname() : '',
             'billing_company'       => $correctBilling ? $billing->getCompany() : '',
-            'billing_address_1'     => $correctBilling ? implode(', ', $billing->getStreet()) : '',
+            'billing_address_1'     => ($correctBilling && $billing->getStreet()) ? implode(', ', $billing->getStreet()) : '',
             'billing_address_2'     => '',       // reserved
             'billing_city'          => $correctBilling ? $billing->getCity() : '',
             'billing_postcode'      => $correctBilling ? $billing->getPostcode() : '',
