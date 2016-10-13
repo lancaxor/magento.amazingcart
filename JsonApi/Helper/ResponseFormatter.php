@@ -226,7 +226,7 @@ class ResponseFormatter
             'order_count'   => 0,       // TODO: check it
             'credit_card_management_aut_net'    => [],
             'user_registered' => [
-                'db_format'     => $createdDate,
+                'db_format'     => $createdDate->format('Y-m-d H:i:s'),
                 'unixtime'      => $createdDateTimestamp,
                 'servertime'    => $createdDateTimestamp,
                 'ago'           => $this->getAgoString($strCreatedDate),
