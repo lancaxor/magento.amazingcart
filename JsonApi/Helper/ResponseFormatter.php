@@ -164,19 +164,19 @@ class ResponseFormatter
         }
 
         $formattedShipping = [
-            'shipping_first_name' => $correctShipping ? $shipping->getFirstname() : '',
-            'shipping_last_name' => $correctShipping ? $shipping->getLastname() : '',
-            'shipping_company' => $correctShipping ? $shipping->getCompany() : '',
+            'shipping_first_name' => $correctShipping && $shipping->getFirstname() ? $shipping->getFirstname() : '',
+            'shipping_last_name' => $correctShipping && $shipping->getLastname() ? $shipping->getLastname() : '',
+            'shipping_company' => $correctShipping && $shipping->getCompany() ? $shipping->getCompany() : '',
             'shipping_address_1' => ($correctShipping && $shipping->getStreet()) ? implode(', ', $shipping->getStreet()) : '',
             'shipping_address_2' => '',
-            'shipping_city' => $correctShipping ? $shipping->getCity() : '',
-            'shipping_postcode' => $correctShipping ? $shipping->getPostcode() : '',
+            'shipping_city' => $correctShipping && $shipping->getCity() ? $shipping->getCity() : '',
+            'shipping_postcode' => $correctShipping && $shipping->getPostcode() ? $shipping->getPostcode() : '',
             'shipping_state' => isset($shippingRegion) ? $shippingRegion->getRegion() : '',
-            'shipping_state_code' => isset($shippingRegion) ? $shippingRegion->getRegionCode() : '',
+            'shipping_state_code' => isset($shippingRegion) && $shippingRegion->getRegionCode() ? $shippingRegion->getRegionCode() : '',
             'shipping_has_state' => isset($shippingRegion),
             'shipping_country' => '',
-            'shipping_country_code' => $correctShipping ? $shipping->getCountryId() : '',
-            'shipping_phone'     =>  $correctShipping ? $shipping->getTelephone() : '',
+            'shipping_country_code' => $correctShipping && $shipping->getCountryId() ? $shipping->getCountryId() : '',
+            'shipping_phone'     =>  $correctShipping && $shipping->getTelephone() ? $shipping->getTelephone() : '',
             'shipping_email'     =>  ''      // reserved
         ];
 //        $shipping = isset($customerInfo['shipping']) ? $customerInfo['shipping'] : [];
@@ -196,19 +196,19 @@ class ResponseFormatter
             $billingRegion = $billing->getRegion();
         }
         $formattedBilling = [
-            'billing_first_name'    => $correctBilling ? $billing->getFirstname() : '',
-            'billing_last_name'     => $correctBilling ? $billing->getLastname() : '',
-            'billing_company'       => $correctBilling ? $billing->getCompany() : '',
+            'billing_first_name'    => $correctBilling && $billing->getFirstname() ? $billing->getFirstname() : '',
+            'billing_last_name'     => $correctBilling && $billing->getLastname() ? $billing->getLastname() : '',
+            'billing_company'       => $correctBilling && $billing->getCompany() ? $billing->getCompany() : '',
             'billing_address_1'     => ($correctBilling && $billing->getStreet()) ? implode(', ', $billing->getStreet()) : '',
             'billing_address_2'     => '',       // reserved
-            'billing_city'          => $correctBilling ? $billing->getCity() : '',
-            'billing_postcode'      => $correctBilling ? $billing->getPostcode() : '',
-            'billing_state'         => isset($billingRegion) ? $billingRegion->getRegion() : '',
-            'billing_state_code'    => isset($billingRegion) ? $billingRegion->getRegionCode() : '',
+            'billing_city'          => $correctBilling && $billing->getCity() ? $billing->getCity() : '',
+            'billing_postcode'      => $correctBilling && $billing->getPostcode() ? $billing->getPostcode() : '',
+            'billing_state'         => isset($billingRegion) && $billingRegion->getRegion() ? $billingRegion->getRegion() : '',
+            'billing_state_code'    => isset($billingRegion) && $billingRegion->getRegionCode()? $billingRegion->getRegionCode() : '',
             'billing_has_state'     => isset($billingRegion),
             'billing_country'       => '',      // reserved
-            'billing_country_code'  =>$correctBilling ? $billing->getCountryId() : '',
-            'billing_phone'     =>  $correctBilling ? $billing->getTelephone() : '',
+            'billing_country_code'  =>$correctBilling && $billing->getCountryId() ? $billing->getCountryId() : '',
+            'billing_phone'     =>  $correctBilling && $billing->getTelephone() ? $billing->getTelephone() : '',
             'billing_email'     =>  ''      // reserved
         ];
         unset($billing);
