@@ -727,9 +727,11 @@ class ResponseFormatter
 
     /**
      * @param $addressInfo AddressInterface
+     * @param $toString boolean
+     * @param $stringSeparator string
      * @return string|array
      */
-    public function formatQuoteAddress($addressInfo) {
+    public function formatQuoteAddress($addressInfo, $toString = false, $stringSeparator = ', ') {
         $data = [];
         if($addressInfo->getRegion()) {
             $data['region'] = $addressInfo->getRegion();
@@ -741,11 +743,15 @@ class ResponseFormatter
 
 
         if($addressInfo->getStreet()) {
-            $data['street'] = $addressInfo->getStreet();
+            $data['street'] = implode(' ', $addressInfo->getStreet());
         }
 
         if($addressInfo->getPostcode()) {
             $data['postcode'] = $addressInfo->getPostcode();
+        }
+
+        if($toString) {
+            return implode($stringSeparator, $data);
         }
 
         return $data;
@@ -757,32 +763,32 @@ class ResponseFormatter
      */
     public function formatOrderEntity($orderData) {
         return [
-            'orderID'   => $orderData->getEntityId(),
+            'orderID'   => intval($orderData->getEntityId()),
             'order_key' => '',
-            'display-price-during-cart-checkout'    => '',
+            'display-price-during-cart-checkout'    => 'excl',
             'orderDate' => $orderData->getCreatedAt(),
             'paymentDate'   => '',
             'status'    => $orderData->getStatus(),
-            'currency'  => '',
+            'currency'  => '&#36',
             'billing_email' => $orderData->getCustomerEmail(),
             'billing_phone' => '',      // no phone for billing?? ;(
-            'billing_address'   => $this->formatQuoteAddress($orderData->getBillingAddress()),
-            'shipping_address'  => '', //$this->_formatQuoteAddress($orderData->getCustomer()),
+            'billing_address'   => $this->formatQuoteAddress($orderData->getBillingAddress(), true, "\n"),
+            'shipping_address'  => $this->formatQuoteAddress($orderData->getBillingAddress(), true, "\n"),
             'items' => [],
-            'used_coupon'   => ($orderData->getCouponCode() ? 1 : 0),
-            'subtotalWithTax'   => $orderData->getSubtotalInclTax(),        // whatever is this...
-            'subtotalExTax' => $orderData->getSubtotal(),                   // and this....
-            'shipping_method'   => '', //TODO: format shipping method
-            'shipping_cost' => $orderData->getBaseShippingAmount(),
-            'shipping_tax'  => $orderData->getShippingTaxAmount(),
-            'tax_total' => '',
-            'discount_total'    => $orderData->getShippingDiscountAmount(),
-            'order_total'   => $orderData->getGrandTotal(),
-            'order_note'    => $orderData->getCustomerNote(),
+            'used_coupon'   => ($orderData->getCouponCode() ? $orderData->getCouponCode() : []),
+            'subtotalWithTax'   => floatval($orderData->getSubtotalInclTax()),        // whatever is this...
+            'subtotalExTax' => floatval($orderData->getSubtotal()),                   // and this....
+            'shipping_method'   => null, //TODO: format shipping method
+            'shipping_cost' => floatval($orderData->getBaseShippingAmount()),
+            'shipping_tax'  => floatval($orderData->getShippingTaxAmount()),
+            'tax_total' => ($orderData->getSubtotalInclTax() - $orderData->getSubtotal()),
+            'discount_total'    => floatval($orderData->getShippingDiscountAmount()),
+            'order_total'   => floatval($orderData->getGrandTotal()),
+            'order_note'    => ($orderData->getCustomerNote() ? $orderData->getCustomerNote() : ''),
             'payment_method_id' => $orderData->getPayment()->getMethod(),
             'payment_method_title'  => $this->paymentHelper->getPaymentTitle($orderData->getPayment()->getMethod()),
-            'payment_desc'  => $orderData->getPayment()->getAdditionalInformation(),
-            'order_notes'   => ''
+            'payment_desc'  => $this->paymentHelper->getPaymentTitle($orderData->getPayment()->getMethod()),
+            'order_notes'   => [$orderData->getCustomerNote() ? $orderData->getCustomerNote() : '']
         ];
     }
 
@@ -798,12 +804,12 @@ class ResponseFormatter
                 'product_id'    => $orderItem->getProductId(),
                 'product_info' => [
                     'featuredImages'=> '',
-                    'productName'   => ''
+                    'productName'   => $orderItem->getName()
                 ],
-                'variation_id' => '',
+                'variation_id' => '0',
                 'variation_info'    => [
-                    'featuredImages',
-                    'productName'   => $orderItem->getProduct()->getName()
+                    'featuredImages' => '',
+                    'productName'   => $orderItem->getName()
                 ],
                 'quantity'  => $orderItem->getQtyOrdered(),
                 'product_price' => $orderItem->getPriceInclTax(),
