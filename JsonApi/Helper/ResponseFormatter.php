@@ -392,23 +392,27 @@ class ResponseFormatter
         ];
     }
 
+    /**
+     * @param $updateBillingData array [status, reason, data [customer, billing, shipping]
+     * @return array
+     */
     public function formatUserBilling($updateBillingData) {
         //return $this->formatEditUserData($updateBillingData);  // in future we may need to edit the output
 
-        if(isset($editUserData['error'])) {
+        if(isset($updateBillingData['error'])) {
             return [
-                'status'    => $editUserData['error'],
-                'reason'    => $editUserData['reason']
+                'status'    => $updateBillingData['error'],
+                'reason'    => $updateBillingData['reason']
             ];
         }
 
         return [
-            'status'        => $editUserData['status'],
-            'reason'        => $editUserData['reason'],
+            'status'        => $updateBillingData['status'],
+            'reason'        => $updateBillingData['reason'],
             'new_user_data' => [
                 'status'    => 0,
                 'reason'    => 'Successful Log',
-                'user'      => $this->formatCustomerData($editUserData['data'])
+                'user'      => $this->formatCustomerData($updateBillingData['data'])
             ]
         ];
     }
