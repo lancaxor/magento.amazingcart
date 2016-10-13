@@ -52,7 +52,7 @@ class Settings
     public function getSettings() {
         $settings = new \stdClass();    // use it as object, not array. Just because it looks cool B-)
         $settings->currency = $this->storeManager->getStore()->getCurrency();
-        $settings->currencySign = 'BAX (like this ➩ $)';
+        $settings->currencySign = 'bax';
         $settings->cartUrl = $this->coreCartHelper->getCartUrl();
         $settings->host = $this->storeManager->getStore()->getBaseUrl();
         $settings->lostPasswordUrl = $settings->host . '/customer/account/login/';

@@ -924,7 +924,7 @@ class ResponseFormatter
                 ],
                 'pricing'   => [
                     'is_on_sale'    => isset($productData['is_on_sale']) ? $productData['is_on_sale'] : false,
-                    'currency'      => '$',
+                    'currency'      => 'bax',
                     'regular_price' => isset($productData['final_price']) ? $productData['final_price'] : '',
                     'sale_price'    => isset($productData['sale_price']) ? $productData['sale_price'] : '',
                     'sale_start'    => [
@@ -993,11 +993,11 @@ class ResponseFormatter
             ],
             'if_variants'   => [
                 'min_price'     => [
-                    'currency'  => '$',
+                    'currency'  => 'bax',
                     'price'     => isset($productData['min_price']) ? $productData['min_price'] : null,
                 ],
                 'max_price'     => [
-                    'currency'  => '$',
+                    'currency'  => 'bax',
                     'price'     => isset($productData['max_price']) ? $productData['max_price'] : null,
                 ],
                 'variables' => []
