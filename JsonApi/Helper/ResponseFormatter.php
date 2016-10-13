@@ -569,11 +569,16 @@ class ResponseFormatter
                 'reason'    => $userRegistrationInfo['reason']
             ];
         }
-        return $this->formatCustomerData([
+        $formattedCustomer = $this->formatCustomerData([
             'customer'  => $userRegistrationInfo,
             'billing'   => [],
             'shipping'  => []
         ]);
+        return [
+            'status'    => 0,
+            'reason'    => 'Successful Registered',
+            'user'      => $formattedCustomer
+        ];
     }
 
     public function formatSingleOrder($orderInfo) {

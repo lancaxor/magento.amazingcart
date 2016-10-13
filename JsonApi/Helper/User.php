@@ -315,7 +315,7 @@ class User
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_address_1'])) {
-            $this->defaultBilling->setStreet($billingData['billing_address_1']);
+            $this->defaultBilling->setStreet(is_array($billingData['billing_address_1']) ? $billingData['billing_address_1'] : [$billingData['billing_address_1']]);
             $isEditedBilling = true;
         }
         if(isset($billingData['billing_address_2'])) {
