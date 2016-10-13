@@ -370,11 +370,9 @@ class User
 
         // save to database
         // and we don`t have to write smth if nothing was changed
-        var_dump('before saving...', $isEditedBilling, $billingData, $this->addressRepository->getById($this->defaultBilling->getId())->getCompany());
         if($isEditedBilling) {
             $this->addressRepository->save($this->defaultBilling);
         }
-        var_dump('after saving', $this->addressRepository->getById($this->defaultBilling->getId())->getCompany());
 
         return [
             'status'    => 0,
