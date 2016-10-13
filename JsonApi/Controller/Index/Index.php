@@ -251,7 +251,7 @@ class Index extends Action
         if(method_exists($this, $functionName)) {
             $data = call_user_func(array($this, $functionName), $request);
         } else {
-            $data = $this->responseFormatter->formatError('unknown command', 1);
+            return '';
         }
 
         if(!isset($data)) {
