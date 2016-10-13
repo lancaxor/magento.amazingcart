@@ -35,7 +35,7 @@ class Index extends Action
     private $activeLogger = true;
     private $logRequest = true;
     private $logMethodName = true;
-    private $logResult = false;
+    private $logResult = true;
     /**#@-*/
 
     /**
