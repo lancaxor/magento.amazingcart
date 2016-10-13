@@ -88,6 +88,8 @@ class Logger {
             return $this;
         }
 
+        if($type == self::LOG_TYPE_DATA) {}
+
         $timestamp = date('Y-m-d, H:i:s.u');
         $message = $timestamp . ': '
             . (array_key_exists($type, self::BEFORE_TYPE) ? self::BEFORE_TYPE[$type] : '')

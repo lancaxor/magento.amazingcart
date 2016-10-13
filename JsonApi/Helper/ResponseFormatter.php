@@ -393,7 +393,24 @@ class ResponseFormatter
     }
 
     public function formatUserBilling($updateBillingData) {
-        return $this->formatEditUserData($updateBillingData);  // in future we may need to edit the output
+        //return $this->formatEditUserData($updateBillingData);  // in future we may need to edit the output
+
+        if(isset($editUserData['error'])) {
+            return [
+                'status'    => $editUserData['error'],
+                'reason'    => $editUserData['reason']
+            ];
+        }
+
+        return [
+            'status'        => $editUserData['status'],
+            'reason'        => $editUserData['reason'],
+            'new_user_data' => [
+                'status'    => 0,
+                'reason'    => 'Successful Log',
+                'user'      => $this->formatCustomerData($editUserData['data'])
+            ]
+        ];
     }
 
     public function formatUserShipping($updateShippingData) {
