@@ -405,10 +405,11 @@ class ResponseFormatter
      * @return array
      */
     public function formatCartApi($cartApiInfo) {
-        if(!isset($cartApiInfo['cart'])) {
+
+        if(isset($cartApiInfo['error'])) {
             return [
-                'error' => -1,
-                'response'  => 'No cart was created'
+                'error' => $cartApiInfo['error'],
+                'response'  => $cartApiInfo['reason']
             ];
         }
 
@@ -425,7 +426,7 @@ class ResponseFormatter
             ],
             'coupon'    => $coupon,
             'has_tax' => boolval($cart->getQuote()->getShippingAddress()->getTaxAmount()),
-            'currency' => $cart->getQuote()->getCurrency(),
+            'currency' => 'bax',//$cart->getQuote()->getCurrency(),
             'display-price-during-cart-checkout' => true,
             'cart-subtotal' => $cart->getQuote()->getShippingAddress()->getSubtotalInclTax(),
             'cart-subtotal-ex-tax' => $cart->getQuote()->getSubtotal(),

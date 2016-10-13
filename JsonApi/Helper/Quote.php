@@ -235,9 +235,6 @@ class Quote
         }
         $this->cart->getQuote()->collectTotals();
 
-//        $this->cart->getC
-        //--- gateways
-//        $paymentGateways = $this->paymentHelper->getPaymentArray();
         $paymentMethods = $this->paymentHelper->getPaymentCollection();
 
         if($allowSave) {

@@ -543,12 +543,14 @@ class Index extends Action
      * @return array
      */
     protected function cartApi($request) {
+
         $userName = $request->getParam('username');
         $password = $request->getParam('password');
         $productIdJson = $request->getParam('productIDJson');
         $couponIdJson = $request->getParam('couponCodeJson');
         $cartInfo = $this->quoteHelper->cartApi($userName, $password, $productIdJson, $couponIdJson);
-        return $this->responseFormatter->formatCartApi($cartInfo);
+        $data = $this->responseFormatter->formatCartApi($cartInfo);
+        return $data;
     }
 
     /**
