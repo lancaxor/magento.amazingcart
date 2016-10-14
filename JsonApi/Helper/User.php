@@ -348,6 +348,8 @@ class User
             $isEditedBilling = true;
         }
 
+//        var_dump($billingData);
+//        die(var_dump('updatebilling:: defaultbilling: ', $this->defaultBilling->getId(), $this->defaultBilling->getCity(), $this->defaultBilling->getCustomerId(), $this->defaultBilling->getLastname()));
         // save to database
         // and we don`t have to write smth if nothing was changed
         if($isEditedBilling) {
@@ -495,7 +497,7 @@ class User
         $defaultBilling = $this->customerObject->getDefaultBilling();
         $defaultShipping = $this->customerObject->getDefaultShipping();
         $isCustomerEdited = false;
-
+//var_dump('loadbillingshipping:: defaultbilling: ', $defaultBilling);
         // to minimize duplicating code
         $needCreateBilling = false;
         $needCreateShipping = false;
@@ -510,6 +512,7 @@ class User
             $needCreateBilling = true;
         }
 
+//        var_dump('loadbillingshipping:: needcreatebilling: ', $needCreateBilling);
         if ($needCreateBilling) {
             $this->defaultBilling = $this->createAddress(true, false);
             $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
@@ -542,17 +545,24 @@ class User
     }
 
     protected function createAddress($isDefaultBilling = false, $isDefaultShipping = false) {
-        $address = $this->addressFactory->create()
+        $model = $this->addressModelFactory->create();
+        $model->setCustomerId($this->customerObject->getId())
+            ->getResource()->save($model);
+
+        $address = $model->getDataModel()//$this->addressFactory->create()
             ->setCustomerId($this->customerObject->getId())
             ->setIsDefaultBilling($isDefaultBilling)
             ->setIsDefaultShipping($isDefaultShipping)
             ->setCity('n/a')
             ->setCountryId('n/a')
+            ->setCompany('n/a')
+            ->setFax('n/a')
             ->setFirstname($this->customerObject->getFirstname())
             ->setLastname($this->customerObject->getLastname())
             ->setPostcode('n/a')
             ->setStreet(['n/a'])
             ->setTelephone('n/a');
+//        die(var_dump($this->addressRepository->getById));
         $this->addressRepository->save($address);
         return $address;
     }
