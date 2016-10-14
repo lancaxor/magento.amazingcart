@@ -495,6 +495,8 @@ class User
         $defaultBilling = $this->customerObject->getDefaultBilling();
         $defaultShipping = $this->customerObject->getDefaultShipping();
         $isCustomerEdited = false;
+
+        // to minimize duplicating code
         $needCreateBilling = false;
         $needCreateShipping = false;
 
