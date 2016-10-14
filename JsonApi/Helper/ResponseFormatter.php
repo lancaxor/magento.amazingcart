@@ -164,6 +164,7 @@ class ResponseFormatter
         }
 
         $formattedShipping = [
+            'shipping_id' => $correctShipping ? $shipping->getId() : 0,
             'shipping_first_name' => $correctShipping && $shipping->getFirstname() ? $shipping->getFirstname() : '',
             'shipping_last_name' => $correctShipping && $shipping->getLastname() ? $shipping->getLastname() : '',
             'shipping_company' => $correctShipping && $shipping->getCompany() ? $shipping->getCompany() : '',
@@ -191,6 +192,7 @@ class ResponseFormatter
             $billingRegion = $billing->getRegion();
         }
         $formattedBilling = [
+            'billing_id'            => $correctBilling ? $billing->getId() : 0,
             'billing_first_name'    => ($correctBilling && $billing->getFirstname()) ? $billing->getFirstname() : '',
             'billing_last_name'     => ($correctBilling && $billing->getLastname()) ? $billing->getLastname() : '',
             'billing_company'       => ($correctBilling && $billing->getCompany()) ? $billing->getCompany() : '',
