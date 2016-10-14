@@ -14,6 +14,7 @@ use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterfaceFactory;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\AddressFactory;
 use Magento\Customer\Model\Session;
 use Magento\Framework\Exception;
 
@@ -69,6 +70,10 @@ class User
      */
     private $addressFactory;
 
+    /**
+     * @var \Magento\Customer\Model\AddressFactory
+     */
+    private $addressModelFactory;
 
     public function __construct(
         AccountManagementInterface $customerAccountManagement,
@@ -76,14 +81,16 @@ class User
         CustomerRepositoryInterface $repositoryInterface,
         Session $customerSession,
         AddressRepositoryInterface  $addressRepository,
-        AddressInterfaceFactory $addressFactory
+        AddressInterfaceFactory $addressApiFactory,
+        AddressFactory $addressFactory
     ) {
         $this->accountManagement = $customerAccountManagement;
         $this->session = $customerSession;
         $this->customerObject = $customer;
         $this->customerRepository = $repositoryInterface;
         $this->addressRepository = $addressRepository;
-        $this->addressFactory = $addressFactory;
+        $this->addressFactory = $addressApiFactory;
+        $this->addressModelFactory = $addressFactory;
     }
 
     protected function getError($message, $status = -1) {
@@ -162,34 +169,7 @@ class User
         } catch (\Exception $e) {
             return $this->getError('Unknown exception: ' . $e->getMessage());
         }
-
-        $defaultBilling = $this->customerObject->getDefaultBilling();
-        $defaultShipping = $this->customerObject->getDefaultShipping();
-
-        if(isset($defaultBilling)) {
-            $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
-        } else {
-
-            //create new billing address for the customer
-            $this->defaultBilling = $this->addressFactory->create();
-            $this->defaultBilling->setCustomerId($this->customerObject->getId());
-            $this->addressRepository->save($this->defaultBilling);
-            $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
-            $this->customerRepository->save($this->customerObject);
-        }
-
-        if(isset($defaultShipping)) {
-            $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
-        } else {
-
-            // create new shipping address for the customer
-            $this->defaultShipping = $this->addressFactory->create();
-            $this->defaultShipping->setCustomerId($this->customerObject->getId());
-            $this->addressRepository->save($this->defaultShipping);
-            $this->customerObject->setDefaultShipping($this->defaultShipping->getId());
-            $this->customerRepository->save($this->customerObject);
-        }
-
+        $this->loadBillingShipping();
         return [
             'status'    => 0,
             'reason'    => 'Successful Log',
@@ -504,5 +484,74 @@ class User
         } catch (Exception\LocalizedException $exception) {
             return $this->getError($exception->getMessage());
         }
+    }
+
+    /**
+     * Load default customer billing and shipping, or create ones if user have no addresses.
+     * @return $this
+     */
+    protected function loadBillingShipping() {
+//        die(var_dump($this->customerObject->getEmail(), $this->customerObject->getDefaultBilling()));
+        $defaultBilling = $this->customerObject->getDefaultBilling();
+        $defaultShipping = $this->customerObject->getDefaultShipping();
+        $isCustomerEdited = false;
+        $needCreateBilling = false;
+        $needCreateShipping = false;
+
+        if(isset($defaultBilling)) {
+            try {
+                $this->defaultBilling = $this->addressRepository->getById($defaultBilling);
+            } catch (Exception\NoSuchEntityException $exception) {
+                $needCreateBilling = true;
+            }
+        } else {
+            $needCreateBilling = true;
+        }
+
+        if ($needCreateBilling) {
+            $this->defaultBilling = $this->createAddress(true, false);
+            $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
+            $isCustomerEdited = true;
+        }
+
+        if(isset($defaultShipping)) {
+            try {
+                $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
+            } catch (Exception\NoSuchEntityException $exception) {
+                $needCreateShipping = true;
+            }
+        } else {
+            $needCreateShipping = true;
+        }
+
+        // create new shipping address for the customer
+        if($needCreateShipping) {
+            $this->defaultShipping = $this->createAddress(false, true);
+            $this->customerObject->setDefaultShipping($this->defaultShipping->getId());
+            $isCustomerEdited = true;
+        }
+
+        // save customer with single query
+        if($isCustomerEdited) {
+            $this->customerRepository->save($this->customerObject);
+        }
+
+        return $this;
+    }
+
+    protected function createAddress($isDefaultBilling = false, $isDefaultShipping = false) {
+        $address = $this->addressFactory->create()
+            ->setCustomerId($this->customerObject->getId())
+            ->setIsDefaultBilling($isDefaultBilling)
+            ->setIsDefaultShipping($isDefaultShipping)
+            ->setCity('n/a')
+            ->setCountryId('n/a')
+            ->setFirstname($this->customerObject->getFirstname())
+            ->setLastname($this->customerObject->getLastname())
+            ->setPostcode('n/a')
+            ->setStreet(['n/a'])
+            ->setTelephone('n/a');
+        $this->addressRepository->save($address);
+        return $address;
     }
 }
