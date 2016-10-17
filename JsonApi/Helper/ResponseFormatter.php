@@ -554,6 +554,29 @@ class ResponseFormatter
     }
 
     /**
+     * @param $products
+     * @param $category \Magento\Catalog\Model\Category
+     * @param $pager Pager
+     * @param $categories
+     * @return array
+     */
+    public function formatProductsByCategory($products, $category, $pager, $categories) {
+
+        $data = $this->formatPagedProducts(
+            $pager,
+            $products,
+            $categories
+        );
+        $data = array_merge($data, [
+            'categoryID'    => intval($category->getId()),
+            'categoryName'  => $category->getName(),
+            'categorySlug'  => $category->getUrlKey()
+        ]);
+//        die(var_dump($data));
+        return $data;
+    }
+
+    /**
      * @param $featuredProductInfo
      * @return array
      */

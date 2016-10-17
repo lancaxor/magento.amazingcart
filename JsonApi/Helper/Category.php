@@ -35,17 +35,14 @@ class Category
             ->addFieldToSelect('image')
             ->addFieldToSelect('url_key');
 
-        /** @var \Magento\Catalog\Model\Category $item */
-//        foreach($collection as &$item) {
-//            $item->setData('url', $item->getUrl());   // don't need this
-//            $item->setData('url_key', $item->getUrlKey());
-//            $item->setData('product_count', $item->getProductCount());
-//            $item->setData('image_url', $item->getImageUrl());
-//            var_dump($item->getData());
-//        }
-//        die('testted');
-//        $data = $collection->getData();
-//        die(var_dump($data));
         return $collection->load();
+    }
+
+    public function getById($categoryId) {
+        $category = $this->categoryFactory
+            ->create();
+        $category->getResource()
+            ->load($category, $categoryId);
+        return $category;
     }
 }
