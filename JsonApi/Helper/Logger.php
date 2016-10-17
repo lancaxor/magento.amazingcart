@@ -130,6 +130,7 @@ class Logger {
     }
     public function clearLog() {
         $this->data = [];
+        file_put_contents($this->logFile, '');
         return $this;
     }
 
