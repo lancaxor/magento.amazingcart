@@ -851,5 +851,15 @@ class Index extends Action
             'status'    => 1
         ];
     }
+
+    protected function clearRuntimeLog() {
+        try {
+            $this->loggerHelper->clearLog();
+            $data = 'Clear Log success!';
+        } catch (\Exception $exception) {
+            $data = $exception->getMessage();
+        }
+        return $data;
+    }
     #endregion
 }
