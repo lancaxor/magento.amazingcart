@@ -678,12 +678,12 @@ class ResponseFormatter
 
             if($row['parent_id'] == $parent) {
                 $item = [
-                    'term_id'   => $row['entity_id'],
-                    'thumb'     => null,
+                    'term_id'   => intval($row['entity_id']),
+                    'thumb'     => '',
                     'name'      => $row['value'],
                     'slug'      => isset($row['category_slug']) ? $row['category_slug'] : '',
-                    'category_parent'   => $row['parent_id'],
-                    'post_count'    => isset($row['product_count']) ? $row['product_count'] : 0,
+                    'category_parent'   => intval($row['parent_id']),
+                    'post_count'    => isset($row['product_count']) ? intval($row['product_count']) : 0,
                     'children'  => $this->buildProductCategoriesTree($data, $row['entity_id'])
                 ];
                 $result[] = $item;
@@ -901,15 +901,15 @@ class ResponseFormatter
      */
     protected function formatSingleProductCategory($category) {
         return [
-            'term_id' => $category->getId(),
+            'term_id' => intval($category->getId()),
             'name' => $category->getName(),
             'slug' => $category->getData('slug'),
             'term_group' => 0,
             'term_taxonomy_id' => $category->getId(),
             'taxonomy' => 'product_cat',
             'description' => $category->getData('name'),
-            'parent' => $category->getParentIds(),
-            'count' => $category->getProductCount(),
+            'parent' => intval($category->getParentIds()),
+            'count' => intval($category->getProductCount()),
             'filter' => 'raw',
         ];
     }
