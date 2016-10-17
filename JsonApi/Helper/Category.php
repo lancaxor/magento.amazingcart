@@ -11,6 +11,14 @@ namespace Amazingcard\JsonApi\Helper;
 
 class Category
 {
+    /**
+     * @var \Magento\Catalog\Api\CategoryRepositoryInterface
+     */
+    protected $categoryRepository;
+
+    /**
+     * @var \Magento\Catalog\Model\CategoryFactory
+     */
     protected $categoryFactory;
 
     public function __construct(
@@ -19,17 +27,25 @@ class Category
         $this->categoryFactory = $categoryFactory;
     }
 
-    public function getCategoriesByProductIds($productIds) {
-        $categoryModel = $this->categoryFactory->create();
-        $categories = $categoryModel->getCollection()
-            ->addFieldToFilter('product_id', $productIds)
-            ->addFieldToSelect('*');
+    public function getList() {
+        $model = $this->categoryFactory->create();
+        $collection = $model->getCollection();
 
-        /** @var \Magento\Catalog\Model\Category $category */
-        foreach($categories as $category) {
-            var_dump($category->getName());
-        }
-        die('damnit');
-        return $categories;
+        $collection->addFieldToSelect('name')
+            ->addFieldToSelect('image')
+            ->addFieldToSelect('url_key');
+
+        /** @var \Magento\Catalog\Model\Category $item */
+//        foreach($collection as &$item) {
+//            $item->setData('url', $item->getUrl());   // don't need this
+//            $item->setData('url_key', $item->getUrlKey());
+//            $item->setData('product_count', $item->getProductCount());
+//            $item->setData('image_url', $item->getImageUrl());
+//            var_dump($item->getData());
+//        }
+//        die('testted');
+//        $data = $collection->getData();
+//        die(var_dump($data));
+        return $collection->load();
     }
 }

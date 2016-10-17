@@ -13,7 +13,6 @@ namespace Amazingcard\JsonApi\Controller\Index;
 use Amazingcard\JsonApi\Helper\Logger;
 use Amazingcard\JsonApi\Helper\Pager;
 use Amazingcard\JsonApi\Helper\PaymentHelper;
-use Amazingcard\JsonApi\Helper\Setting;
 use Amazingcard\JsonApi\Helper\Settings;
 use Amazingcard\JsonApi\Helper\UrlWorker;
 use Amazingcard\JsonApi\Model\Base\BaseAbstractResourceModel;
@@ -144,6 +143,11 @@ class Index extends Action
      */
     protected $loggerHelper;
 
+    /**
+     * @var \Amazingcard\JsonApi\Helper\Category
+     */
+    protected $categoryHelper;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -162,6 +166,7 @@ class Index extends Action
         \Amazingcard\JsonApi\Helper\Quote $apiHelper,
         \Amazingcard\JsonApi\Helper\Product $productHelper,
         \Amazingcard\JsonApi\Helper\Order $orderHelper,
+        \Amazingcard\JsonApi\Helper\Category $categoryHelper,
         Pager $pagerHelper,
         PaymentHelper $paymentHelper,
         UrlWorker $urlWorker,
@@ -189,7 +194,7 @@ class Index extends Action
         $this->paymentHelper = $paymentHelper;
         $this->settingsHelper = $settingsHelper;
         $this->loggerHelper = $loggerHelper;
-
+        $this->categoryHelper = $categoryHelper;
         parent::__construct($context);
 
         $this->initialize();
@@ -275,9 +280,11 @@ class Index extends Action
     protected function productCategories($request) {
         $parent = $request->getParam('parent', 0);
 
+        $categories = $this->categoryHelper->getList();
         // full list of categories
-        $object = $this->catalogCategoryFactory->getObject();
-        $categories = $object->getCategories();
+//        $object = $this->catalogCategoryFactory->getObject();
+//        $categories = $object->getCategories();
+//        die(var_dump($categories));
         $data = $this->responseFormatter->formatProductCategories($categories, $parent);
         return $data;
     }

@@ -667,28 +667,44 @@ class ResponseFormatter
      * @param $parent
      * @return array
      */
-    protected function buildProductCategoriesTree(&$data, $parent = 0) {
+    protected function buildProductCategoriesTree($data, $parent = 0) {
         $result = [];
 
         if(empty($data)) {
             return [];
         }
 
-        foreach ($data as $row) {
-
-            if($row['parent_id'] == $parent) {
+        /** @var \Magento\Catalog\Model\Category $category */
+        foreach ($data as $category) {
+            if($category->getParentId() == $parent) {
                 $item = [
-                    'term_id'   => intval($row['entity_id']),
-                    'thumb'     => '',
-                    'name'      => $row['value'],
-                    'slug'      => isset($row['category_slug']) ? $row['category_slug'] : '',
-                    'category_parent'   => intval($row['parent_id']),
-                    'post_count'    => isset($row['product_count']) ? intval($row['product_count']) : 0,
-                    'children'  => $this->buildProductCategoriesTree($data, $row['entity_id'])
+                    'term_id'   => intval($category->getEntityId()),
+                    'thumb'     => $category->getImageUrl() ? $category->getImageUrl() : '0',
+                    'name'      => $category->getName(),
+                    'slug'      => $category->getUrlKey() ? $category->getUrlKey() : '',
+                    'category_parent'   => intval($category->getParentId()),
+                    'post_count'    => $category->getProductCount(),
+                    'children'  => $this->buildProductCategoriesTree($data, $category->getId())
                 ];
                 $result[] = $item;
             }
         }
+
+//        foreach ($data as $row) {
+//
+//            if($row['parent_id'] == $parent) {
+//                $item = [
+//                    'term_id'   => intval($row['entity_id']),
+//                    'thumb'     => '',
+//                    'name'      => $row['value'],
+//                    'slug'      => isset($row['category_slug']) ? $row['category_slug'] : '',
+//                    'category_parent'   => intval($row['parent_id']),
+//                    'post_count'    => isset($row['product_count']) ? intval($row['product_count']) : 0,
+//                    'children'  => $this->buildProductCategoriesTree($data, $row['entity_id'])
+//                ];
+//                $result[] = $item;
+//            }
+//        }
         return $result;
     }
 
@@ -900,6 +916,21 @@ class ResponseFormatter
      * @return array
      */
     protected function formatSingleProductCategory($category) {
+
+//        return [
+//            'term_id' => intval($category->getId()),
+//            'thumb' => $category->getImageUrl() ? $category->getImageUrl() : '0',
+//            'name' => $category->getName(),
+//            'slug' => $category->getUrlKey(),
+//            'term_group' => 0,
+//            'term_taxonomy_id' => $category->getId(),
+//            'taxonomy' => 'product_cat',
+//            'description' => $category->getName(),
+//            'parent' => intval($category->getParentIds()),
+//            'count' => intval($category->getProductCount()),
+//            'filter' => 'raw',
+//        ];
+
         return [
             'term_id' => intval($category->getId()),
             'name' => $category->getName(),
