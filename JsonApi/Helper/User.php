@@ -318,15 +318,11 @@ class User
             $this->defaultBilling->setCompany($billingData['billing_company']);
             $isEditedBilling = true;
         }
-        if(isset($billingData['billing_address_1'])) {
-            $this->defaultBilling->setStreet(is_array($billingData['billing_address_1']) ? $billingData['billing_address_1'] : [$billingData['billing_address_1']]);
+        if(isset($billingData['billing_address_1']) || isset($billingData['billing_address_2'])) {
+            $this->defaultBilling->setStreet([isset($billingData['billing_address_1']) ? $billingData['billing_address_1'] : '', isset($billingData['billing_address_2']) ? $billingData['billing_address_2'] : '']);
             $isEditedBilling = true;
         }
-        if(isset($billingData['billing_address_2'])) {
-            // but in Magento address is other billingAddress entity,
-            // so we can create other address entity in database and set it as default...
-            $isEditedBilling = true;
-        }
+
         if(isset($billingData['billing_city'])) {
             $this->defaultBilling->setCity($billingData['billing_city']);
             $isEditedBilling = true;
@@ -572,7 +568,7 @@ class User
             ->setFirstname($this->customerObject->getFirstname())
             ->setLastname($this->customerObject->getLastname())
             ->setPostcode('n/a')
-            ->setStreet(['n/a'])
+            ->setStreet(['n/a', ''])
             ->setTelephone('n/a');
 
         if ($isDefaultBilling) {
