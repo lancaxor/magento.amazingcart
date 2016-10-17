@@ -8,14 +8,6 @@
 
 namespace Amazingcard\JsonApi\Helper;
 
-
-use Magento\Customer\Api\AccountManagementInterface;
-use Magento\Customer\Api\AddressRepositoryInterface;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Api\Data\AddressInterfaceFactory;
-use Magento\Customer\Api\Data\CustomerInterface;
-use Magento\Customer\Model\AddressFactory;
-use Magento\Customer\Model\Session;
 use Magento\Framework\Exception;
 
 class User
@@ -75,14 +67,25 @@ class User
      */
     private $addressModelFactory;
 
+    /**
+     * @var \Magento\Customer\Model\AddressRegistry
+     */
+    private $addressRegistry;
+
+    /**
+     * @var \Magento\Customer\Block\Address\
+     */
+    private $addr;
+
     public function __construct(
-        AccountManagementInterface $customerAccountManagement,
-        CustomerInterface   $customer,
-        CustomerRepositoryInterface $repositoryInterface,
-        Session $customerSession,
-        AddressRepositoryInterface  $addressRepository,
-        AddressInterfaceFactory $addressApiFactory,
-        AddressFactory $addressFactory
+        \Magento\Customer\Api\AccountManagementInterface $customerAccountManagement,
+        \Magento\Customer\Api\Data\CustomerInterface   $customer,
+        \Magento\Customer\Api\CustomerRepositoryInterface $repositoryInterface,
+        \Magento\Customer\Model\Session $customerSession,
+        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
+        \Magento\Customer\Api\Data\AddressInterfaceFactory $addressApiFactory,
+        \Magento\Customer\Model\AddressFactory $addressFactory,
+        \Magento\Customer\Model\AddressRegistry $addressRegistry
     ) {
         $this->accountManagement = $customerAccountManagement;
         $this->session = $customerSession;
@@ -91,6 +94,7 @@ class User
         $this->addressRepository = $addressRepository;
         $this->addressFactory = $addressApiFactory;
         $this->addressModelFactory = $addressFactory;
+        $this->addressRegistry = $addressRegistry;
     }
 
     protected function getError($message, $status = -1) {
@@ -493,11 +497,15 @@ class User
      * @return $this
      */
     protected function loadBillingShipping() {
-//        die(var_dump($this->customerObject->getEmail(), $this->customerObject->getDefaultBilling()));
+
         $defaultBilling = $this->customerObject->getDefaultBilling();
         $defaultShipping = $this->customerObject->getDefaultShipping();
         $isCustomerEdited = false;
-//var_dump('loadbillingshipping:: defaultbilling: ', $defaultBilling);
+
+        // save customer with single query
+        $b = $this->accountManagement->getDefaultBillingAddress($this->customerObject->getId());
+        $s = $this->accountManagement->getDefaultShippingAddress($this->customerObject->getId());
+
         // to minimize duplicating code
         $needCreateBilling = false;
         $needCreateShipping = false;
@@ -511,14 +519,6 @@ class User
         } else {
             $needCreateBilling = true;
         }
-
-//        var_dump('loadbillingshipping:: needcreatebilling: ', $needCreateBilling);
-        if ($needCreateBilling) {
-            $this->defaultBilling = $this->createAddress(true, false);
-            $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
-            $isCustomerEdited = true;
-        }
-
         if(isset($defaultShipping)) {
             try {
                 $this->defaultShipping = $this->addressRepository->getById($defaultShipping);
@@ -529,6 +529,12 @@ class User
             $needCreateShipping = true;
         }
 
+        if ($needCreateBilling) {
+            $this->defaultBilling = $this->createAddress(true, false);
+            $this->customerObject->setDefaultBilling($this->defaultBilling->getId());
+            $isCustomerEdited = true;
+        }
+
         // create new shipping address for the customer
         if($needCreateShipping) {
             $this->defaultShipping = $this->createAddress(false, true);
@@ -536,34 +542,51 @@ class User
             $isCustomerEdited = true;
         }
 
-        // save customer with single query
-        if($isCustomerEdited) {
-            $this->customerRepository->save($this->customerObject);
-        }
+//        if($isCustomerEdited) {
+//            try {
+////                $this->customerRepository->save($this->customerObject);
+//            } catch (\Exception $exception) {
+//                die(var_dump('exception while saving customer in loadbillingShipping', $exception->getMessage()));
+//            }
+//        }
+
+//        die(var_dump('after customer save'));
 
         return $this;
     }
 
     protected function createAddress($isDefaultBilling = false, $isDefaultShipping = false) {
-        $model = $this->addressModelFactory->create();
-        $model->setCustomerId($this->customerObject->getId())
-            ->getResource()->save($model);
 
+
+        $model = $this->addressModelFactory->create();
+        $model//->setDataChanges(true)
+            ->setCustomerId($this->customerObject->getId())
+            ->getResource();
         $address = $model->getDataModel()//$this->addressFactory->create()
             ->setCustomerId($this->customerObject->getId())
-            ->setIsDefaultBilling($isDefaultBilling)
-            ->setIsDefaultShipping($isDefaultShipping)
             ->setCity('n/a')
-            ->setCountryId('n/a')
-            ->setCompany('n/a')
+            ->setRegion()
+            ->setCountryId('UA')
+            ->setCompany("fuckit!! b: $isDefaultBilling, s: $isDefaultShipping")
             ->setFax('n/a')
             ->setFirstname($this->customerObject->getFirstname())
             ->setLastname($this->customerObject->getLastname())
             ->setPostcode('n/a')
             ->setStreet(['n/a'])
             ->setTelephone('n/a');
-//        die(var_dump($this->addressRepository->getById));
-        $this->addressRepository->save($address);
-        return $address;
+
+        if ($isDefaultBilling) {
+            $address->setIsDefaultBilling("1");
+        }
+        if ($isDefaultShipping) {
+            $address->setIsDefaultShipping("1");
+        }
+
+        try {
+            $data = $this->addressRepository->save($address);
+        } catch (\Exception $exception) {
+            die(var_dump('exception while saving address in createAddress', $exception->getMesage()));
+        }
+        return $data;
     }
 }

@@ -32,7 +32,7 @@ class Index extends Action
     /**#@+
      * service variables
      */
-    private $activeLogger = true;
+    private $activeLogger = false;
     private $logRequest = true;
     private $logMethodName = true;
     private $logResult = true;
