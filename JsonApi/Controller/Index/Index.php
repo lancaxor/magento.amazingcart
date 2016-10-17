@@ -297,27 +297,37 @@ class Index extends Action
      */
     protected function productByCategoryId($request)
     {
-        $categoryId = $request->getParam('category_id', null);
-
-        if(!isset($categoryId)) {
-            return $this->responseFormatter->formatError('CategoryID is required!', 6);
-        }
+        $categoryId = $request->getParam('id', 0);
 
         $this->pagerHelper->setPage($request->getParam('page', 0))
             ->setPageSize($request->getParam('products-per-page', 10));
 
-        $categoryInfo = $this->catalogCategoryVarcharFactory->getObject()->getNamesAndSlugs($categoryId);
+        $products = $this->productHelper->getProductsByCategory($categoryId, $this->pagerHelper);
+        $category = $this->categoryHelper->getById($categoryId);
+        //$categories = $this->productHelper->getCategoriesByProductIds($products->getAllIds());
+        $categories = $this->productHelper->getProductsCategories($products->getAllIds());
 
-        if(empty($categoryInfo)) {
-            return $this->responseFormatter->formatError('Specified category does not exist!', 4);
-        }
+        return $this->responseFormatter->formatProductsByCategory($products, $category, $this->pagerHelper, $categories);
 
-        $rawProductData = $this->catalogCategoryProductFactory->getObject()
-            ->getProductsByCategory($categoryId, $this->pagerHelper->getLimit(), $this->pagerHelper->getOffset());
-        $this->pagerHelper->setTotalCount($rawProductData['count']);
-        $products = $rawProductData['data'];
+//        if(!$categoryId) {
+//
+//        }
+//        $categoryInfo = $this->catalogCategoryVarcharFactory->getObject()->getNamesAndSlugs($categoryId);
+//
+//        $productsInfo = $this->categoryHelper->getProductsByCategoryId($categoryId);
+//        die(var_dump($productsInfo));
 
-        return $this->responseFormatter->formatCategoryByProductId($categoryInfo, $products, $this->pagerHelper);
+
+//        if(empty($categoryInfo)) {
+//            return $this->responseFormatter->formatError('Specified category does not exist!', 4);
+//        }
+//
+//        $rawProductData = $this->catalogCategoryProductFactory->getObject()
+//            ->getProductsByCategory($categoryId, $this->pagerHelper->getLimit(), $this->pagerHelper->getOffset());
+//        $this->pagerHelper->setTotalCount($rawProductData['count']);
+//        $products = $rawProductData['data'];
+
+//        return $this->responseFormatter->formatCategoryByProductId($categoryInfo, $products, $this->pagerHelper);
     }
 
     /**

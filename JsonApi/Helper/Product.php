@@ -125,7 +125,7 @@ class Product
             'count' => $data['count']
         ];
 
-        $productsInfo['categories'] = $this->getProductsCategories($collection->getData());
+        $productsInfo['categories'] = $this->getProductsCategories(array_column($collection->getData(), 'entity_id'));
         return $productsInfo;
     }
 
@@ -145,7 +145,7 @@ class Product
             'count' => $data['count']
         ];
 
-        $productsInfo['categories'] = $this->getProductsCategories($collection->getData());
+        $productsInfo['categories'] = $this->getProductsCategories(array_column($collection->getData(), 'entity_id'));
         return $productsInfo;
     }
 
@@ -165,18 +165,20 @@ class Product
             'count' => $data['count']
         ];
 
-        $productsInfo['categories'] = $this->getProductsCategories($productsData);
+        $productsInfo['categories'] = $this->getProductsCategories(array_column($productsData, 'entity_id'));
         return $productsInfo;
     }
 
     /**
-     * @param $products
+     * @param $products mixed
      * @return array
      */
     public function getProductsCategories($products) {
 
         if(is_array($products)) {
-            $productIds = array_column($products, 'entity_id');
+
+//            $productIds = array_column($products, 'entity_id');
+            $productIds = $products;
         } elseif (is_int($products) or is_string($products)) {
             $productIds = [$products];
         } else {    // instanceof \Magento\Catalog\Model\Product
@@ -331,5 +333,28 @@ class Product
             'product' => $product,
             'categories' => $this->getProductsCategories($product)[$product->getId()]
         ];
+    }
+
+    /**
+     * @param int $categoryId
+     * @param Pager $pager
+     * @return array|\Magento\Catalog\Model\ResourceModel\Product\Collection
+     */
+    public function getProductsByCategory($categoryId, $pager) {
+        $collection = $this->productFactory->create()->getCollection();
+
+        if($categoryId) {
+            $collection->addCategoriesFilter(
+                is_array($categoryId) ? ['eq' => implode(',', $categoryId)] : ['eq' => $categoryId]
+            );
+        }
+
+        $count = $collection->count();
+        $pager->setTotalCount($count);
+
+        if(isset($pager)) {
+            $collection->getSelect()->limit($pager->getLimit(), $pager->getOffset());
+        }
+        return $collection;
     }
 }
